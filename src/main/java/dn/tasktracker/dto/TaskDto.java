@@ -1,5 +1,6 @@
 package dn.tasktracker.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,8 +23,10 @@ public class TaskDto {
 
     private String status;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd-HH-mm")
     private LocalDateTime createdAt;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd-HH-mm")
     private LocalDateTime updatedAt;
 
     @JsonIgnore
