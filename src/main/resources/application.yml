@@ -1,0 +1,24 @@
+server:
+  port: 3000
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+  config:
+    import: optional:file:.env[.properties]
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cache:
+    redis:
+      time-to-live: 10m
+    type: redis
+    cache-names:
+      task_by_title: taskByTitle
+      task_list: taskList
