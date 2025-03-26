@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -46,6 +48,7 @@ public class TaskServiceImpl implements TaskService {
                 )));}
 
     @Override
+    @Transactional
     public TaskDto save(TaskDto taskDto) {
         TaskEntity taskEntity = new TaskEntity();
         taskEntity.setId(taskEntity.getId());
@@ -81,6 +84,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional
     public void update(String id, TaskDto taskDto) {
          taskRepository.findById(id).ifPresentOrElse(task->{
                      task.setStatus(taskDto.getStatus());
