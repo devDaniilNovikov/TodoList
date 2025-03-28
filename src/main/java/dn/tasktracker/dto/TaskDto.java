@@ -7,8 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.IntStream;
 
 @Data
 @NoArgsConstructor
@@ -35,12 +33,7 @@ public class TaskDto {
     @JsonIgnore
     private Integer pageSize;
 
-    public TaskDto(String number, String s, String inProgress, String s1) {
-    }
 
-    public IntStream threadLocalRandom() {
-        return ThreadLocalRandom.current().ints(10000000);
-    }
 
 
 
