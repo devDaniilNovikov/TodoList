@@ -24,6 +24,7 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -31,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 
 @Configuration
-@EnableConfigurationProperties(CacheConfig.class)
 public class RedisConfig {
 
 
@@ -78,13 +78,15 @@ public class RedisConfig {
     @Bean
     @ConditionalOnExpression("'${app.cache.cacheType}'.equals('redis')")
     public CacheManager redisCacheManager(CacheConfig cacheConfiguration,
-                                     JedisConnectionFactory jedisConnectionFactory) {
+                                          JedisConnectionFactory jedisConnectionFactory) {
         var defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig();
         Map<String,RedisCacheConfiguration> cacheConfigurationMap = new HashMap<>();
         cacheConfiguration.getCacheNames()
                 .forEach(cache->cacheConfigurationMap.put(cache,
                         RedisCacheConfiguration.defaultCacheConfig()
-                                .entryTtl(cacheConfiguration.getCaches().get(cache).getTtl())
+                                .entryTtl(cacheConfiguration.getCaches()
+                                        .get(cache)
+                                        .getTtl())
                 ));
         return RedisCacheManager.builder(jedisConnectionFactory)
                 .cacheDefaults(defaultCacheConfig)

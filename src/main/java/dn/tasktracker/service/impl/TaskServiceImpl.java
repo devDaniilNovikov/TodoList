@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
@@ -59,10 +60,10 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    @CacheEvict(cacheNames = "taskAfterCreate")
+    @CachePut(cacheNames = "taskAfterCreate",key = "#result.id")
     public TaskDto save(TaskDto taskDto) {
         TaskEntity taskEntity = new TaskEntity();
-        taskEntity.setId(taskDto.getId());
+        taskEntity.setId(taskEntity.getId());
         taskEntity.setTitle(taskDto.getTitle());
         taskEntity.setStatus(IN_PROGRESS);
         taskEntity.setDescription(taskDto.getDescription());
