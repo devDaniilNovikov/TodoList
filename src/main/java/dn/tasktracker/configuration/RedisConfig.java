@@ -77,7 +77,7 @@ public class RedisConfig {
 
     @Bean
     @ConditionalOnExpression("'${app.cache.cacheType}'.equals('redis')")
-    public CacheManager cacheManager(CacheConfig cacheConfiguration,
+    public CacheManager redisCacheManager(CacheConfig cacheConfiguration,
                                      JedisConnectionFactory jedisConnectionFactory) {
         var defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig();
         Map<String,RedisCacheConfiguration> cacheConfigurationMap = new HashMap<>();

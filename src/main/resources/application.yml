@@ -12,6 +12,8 @@ spring:
     password: ${POSTGRES_PASSWORD}
   config:
     import: optional:file:.env[.properties]
+  main:
+    allow-bean-definition-overriding: true
 
 app:
   redis:
@@ -20,14 +22,11 @@ app:
   cache:
     cacheType: redis
     caches:
-      orderAfterCreate:
+      taskAfterCreate:
         ttl: 5m
-      orderById:
+      taskAfterUpdate:
         ttl: 10m
-      orders:
+      taskList:
         ttl: 10m
-      comments:
-        ttl: 14d
-      ordersWithPagination:
-        ttl: 20m
+
 

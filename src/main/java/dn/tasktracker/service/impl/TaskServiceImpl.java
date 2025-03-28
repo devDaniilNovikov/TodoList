@@ -24,7 +24,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Log4j2
-@CacheConfig(cacheManager = "cacheManager")
+@CacheConfig(cacheManager = "redisCacheManager")
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
