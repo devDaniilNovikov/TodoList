@@ -1,10 +1,26 @@
 server:
   port: 3000
+  http2:
+    enabled: true
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+  compression:
+    enabled: true
+
 spring:
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    open-in-view: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: tasktracker
+
+
   datasource:
     driver-class-name: org.postgresql.Driver
     url: ${POSTGRES_URL}
@@ -14,11 +30,21 @@ spring:
     import: optional:file:.env[.properties]
   main:
     allow-bean-definition-overriding: true
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+  cache:
+    cache-names: taskAfterCreate,taskById,taskAfterUpdate,taskList,taskListWithPagination
+  threads:
+    virtual:
+      enabled: true
+  batch:
+    job:
+      enabled: true
+
 
 app:
-  redis:
-    host: localhost
-    port: 6379
   cache:
     cacheType: redis
     caches:
@@ -28,5 +54,14 @@ app:
         ttl: 10m
       taskList:
         ttl: 10m
-
-
+      taskById:
+        ttl: 10m
+logging:
+  level:
+    org.springframework.web: ERROR
+    org.springframework.scheduling: INFO
+    org.hibernate.SQL: INFO
+  file:
+    name: logs/application.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

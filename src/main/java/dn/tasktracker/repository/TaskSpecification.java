@@ -1,17 +1,14 @@
 package dn.tasktracker.repository;
 
-import dn.tasktracker.dto.TaskDto;
+import dn.tasktracker.dto.TaskSortDto;
 import dn.tasktracker.entity.TaskEntity;
-import jakarta.persistence.criteria.CriteriaQuery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.Optional;
 
 public interface TaskSpecification {
 
-    static Specification<TaskEntity> withFilter(TaskDto taskDto) {
+    static Specification<TaskEntity> withFilter(TaskSortDto taskDto) {
         return Specification.where(byStatus(taskDto.getStatus())
                 .and(byCreationDate(taskDto.getCreatedAt()))
                 .and(byCreationDateUp())

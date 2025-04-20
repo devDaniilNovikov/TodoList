@@ -1,66 +1,84 @@
 package dn.tasktracker.controller;
-
-import dn.tasktracker.dto.TaskDto;
+import dn.tasktracker.dto.ListTaskResponse;
+import dn.tasktracker.dto.TaskRequest;
+import dn.tasktracker.dto.TaskResponse;
+import dn.tasktracker.dto.TaskSortDto;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.service.TaskService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
 public class TaskController {
 
     private final TaskService taskService;
-
-    private static final String GET_ALL_TASKS = "/api/v1/tasks/all";
+    private static final String GET_ALL_TASKS = "/api/v1/tasks/list";
     private static final String GET_TASK_WITH_PAGINATION = "/api/v1/tasks/sort";
     private static final String GET_TASK_BY_ID = "/api/v1/task/{id}";
     private static final String GET_TASK_BY_TITLE = "/api/v1/task/title/";
     private static final String CREATE_TASK = "/api/v1/task/create";
     private static final String UPDATE_TASK = "/api/v1/task/update/{id}";
     private static final String DELETE_TASK = "/api/v1/task/delete/{id}";
+    private static final String SET_TIME_FOR_TASK = "/api/v1/tasks/{id}/?";
+
+
 
     @GetMapping(value = GET_ALL_TASKS)
     @ResponseStatus(HttpStatus.OK)
-    public List<TaskEntity> findAll(){
-        return taskService.findAll();
+    public ListTaskResponse findAll(){
+        return taskService.getAll();
+    }
+
+    @PostMapping(SET_TIME_FOR_TASK)
+    @ResponseStatus(HttpStatus.OK)
+    public Map<Long,List<TaskEntity>> setTimeForTask(@PathVariable("id") Long taskId,
+                                                     @RequestParam Long userId,
+                                                     @RequestParam Long time){
+        return taskService.setTimeForTask(userId,taskId,time);
     }
 
     @GetMapping(GET_TASK_WITH_PAGINATION)
-    public List<TaskDto> findAll(TaskDto taskDto){
-        return taskService.findAll(taskDto);
+    @ResponseStatus(HttpStatus.OK)
+    public ListTaskResponse findAll(TaskSortDto taskDto){
+        return taskService.getAll(taskDto);
     }
 
     @GetMapping(value = GET_TASK_BY_ID)
-    public TaskDto findById(@PathVariable String id){
+    @ResponseStatus(HttpStatus.OK)
+    public TaskResponse findById(@PathVariable Long id){
         return taskService.getById(id);
 
     }
 
     @GetMapping(GET_TASK_BY_TITLE)
-    public TaskDto findByTitle(@RequestParam String title){
+    @ResponseStatus(HttpStatus.OK)
+    public TaskResponse findByTitle(@RequestParam String title){
         return taskService.findByTitle(title);
     }
 
-    @PostMapping(value = CREATE_TASK, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public TaskDto createTask(@RequestBody TaskDto taskDto){
-        return taskService.save(taskDto);
+    @PostMapping(CREATE_TASK)
+    @ResponseStatus(HttpStatus.CREATED)
+    public TaskResponse createTask(@RequestBody @Valid TaskRequest taskRequest){
+        return taskService.save(taskRequest);
     }
 
-    @PutMapping(UPDATE_TASK)
-    public void updateTask(@PathVariable String id,@RequestBody TaskDto taskDto){
-        taskService.update(id,taskDto);
+    @PatchMapping(UPDATE_TASK)
+    @ResponseStatus(HttpStatus.OK)
+    public void updateTask(@PathVariable Long id, @RequestBody TaskRequest taskRequest){
+        taskService.update(id, taskRequest);
     }
 
     @DeleteMapping(DELETE_TASK)
-    public void deleteTask(@PathVariable String id){
-        taskService.delete(id);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTask(@PathVariable Long id){
+        taskService.deleteById(id);
     }
+
 
 
 

@@ -1,30 +1,36 @@
 package dn.tasktracker.service;
 
-import dn.tasktracker.dto.TaskDto;
+import dn.tasktracker.dto.ListTaskResponse;
+import dn.tasktracker.dto.TaskRequest;
+import dn.tasktracker.dto.TaskResponse;
+import dn.tasktracker.dto.TaskSortDto;
 import dn.tasktracker.entity.TaskEntity;
-import org.springframework.data.redis.stream.Task;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TaskService {
 
-    List<TaskEntity> findAll();
 
-    List<TaskDto> findAll(TaskDto taskDto);
+    ListTaskResponse getAll(TaskSortDto taskDto);
 
-    TaskDto getById(String id);
+    ListTaskResponse getAll();
 
-    TaskDto save(TaskDto taskDto);
+    TaskResponse getById(Long id);
 
-    TaskDto findByTitle(String title);
+    TaskResponse save(TaskRequest taskRequest);
 
-    void changeStatus(String id,String status);
+    void setTaskForUser(TaskRequest taskRequest, String userId);
 
-    void update(String id,TaskDto taskDto);
+    TaskResponse findByTitle(String title);
 
-    void delete(String id);
+    Map<Long,List<TaskEntity>> setTimeForTask(Long userId, Long taskId, Long time);
 
-    void deleteAll(List<String> ids);
+    void update(Long id, TaskRequest taskRequest);
+
+    void deleteById(Long id);
+
+    void deleteAllByIds(List<Long> ids);
 
 
 }

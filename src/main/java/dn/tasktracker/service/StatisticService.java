@@ -1,0 +1,16 @@
+package dn.tasktracker.service;
+
+import dn.tasktracker.entity.TaskEntity;
+
+import java.util.List;
+import java.util.Map;
+
+public interface StatisticService {
+
+    Map<String, List<TaskEntity>> getUserStatisticByTasks(Long userId);
+
+    Map<String, List<TaskEntity>> getUserStatisticByStatus(Long userId, String status);
+
+
+
+}

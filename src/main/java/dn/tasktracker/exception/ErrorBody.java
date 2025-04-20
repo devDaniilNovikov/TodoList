@@ -10,12 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ErrorBody {
-
     private int code;
-
     private String message;
-
-    private String description;
-
     private String path;
 }

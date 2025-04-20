@@ -8,7 +8,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -17,15 +19,23 @@ public class EventHandler {
 
     private final TaskRepository taskRepository;
 
-    @EventListener(TaskEvent.class)
-    public void handle(final TaskEvent taskEvent) {
-        log.info("Handling TaskEvent: {}", taskEvent);
-        if (taskEvent.status().equals("IN_PROGRESS")) {
-            for (TaskEntity task : taskRepository.findAll()) {
-                if (task.isExpired()) {
-                    taskRepository.delete(task);
-                }
-            }
+    @EventListener(TaskCreateEvent.class)
+    public void handle(final TaskCreateEvent taskCreateEvent) {
+        log.info("New Event! Task is created: {}", taskCreateEvent.toString());
+            Map<Long, List<TaskEntity>> taskMap = taskRepository.findAll()
+                    .stream()
+                    .collect(Collectors.groupingBy(TaskEntity::getId,
+                            Collectors.filtering(
+                                    TaskEntity::isExpired,
+                                    Collectors.toList())));
+            log.info("Task Map: {}", taskMap);
         }
+
+
+
+    @EventListener(TaskUpdatedEvent.class)
+    public void handle(final TaskUpdatedEvent taskUpdatedEvent) {
+        log.info("New Event! Task status was updated: {}", taskUpdatedEvent.toString());
     }
+
 }

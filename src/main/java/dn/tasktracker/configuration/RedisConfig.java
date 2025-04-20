@@ -1,46 +1,44 @@
 package dn.tasktracker.configuration;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dn.tasktracker.configuration.cache.CacheConfig;
-import dn.tasktracker.entity.TaskEntity;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.cache.RedisCacheWriter;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
-
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.stereotype.Component;
-
+import org.springframework.data.redis.serializer.*;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Configuration
 public class RedisConfig {
 
-
-    @Value("${app.redis.host}")
+    @Value("${spring.data.redis.host}")
     private String host;
 
-    @Value("${app.redis.port}")
+    @Value("${spring.data.redis.port}")
     private int port;
 
+    @Bean
+    public ObjectMapper objectMapper(){
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,false);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+        objectMapper.findAndRegisterModules();
+        return objectMapper;
+    }
 
     @Bean
     public JedisConnectionFactory jedisConnectionFactory() {
@@ -49,10 +47,13 @@ public class RedisConfig {
     }
 
     @Bean
-    public <F,S> RedisTemplate<F, S> redisTemplate() {
-        RedisTemplate<F, S> redisTemplate = new RedisTemplate<>();
+    public RedisTemplate<String,Object> redisTemplate() {
+        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(jedisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper));
         redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         redisTemplate.setHashKeySerializer(new StringRedisSerializer());
         redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
@@ -70,9 +71,8 @@ public class RedisConfig {
                 .entryTtl(Duration.ofMinutes(10))
                 .disableCachingNullValues()
                 .serializeValuesWith(RedisSerializationContext.SerializationPair
-                        .fromSerializer(new Jackson2JsonRedisSerializer<>(TaskEntity.class)));
+                        .fromSerializer(new GenericJackson2JsonRedisSerializer()));
     }
-
 
 
     @Bean
@@ -80,21 +80,18 @@ public class RedisConfig {
     public CacheManager redisCacheManager(CacheConfig cacheConfiguration,
                                           JedisConnectionFactory jedisConnectionFactory) {
         var defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig();
-        Map<String,RedisCacheConfiguration> cacheConfigurationMap = new HashMap<>();
+        Map<String, RedisCacheConfiguration> cacheConfigurationMap = new HashMap<>();
         cacheConfiguration.getCacheNames()
-                .forEach(cache->cacheConfigurationMap.put(cache,
+                .forEach(cache -> cacheConfigurationMap.put(cache,
                         RedisCacheConfiguration.defaultCacheConfig()
                                 .entryTtl(cacheConfiguration.getCaches()
                                         .get(cache)
-                                        .getTtl())
-                ));
+                                        .getTtl())));
         return RedisCacheManager.builder(jedisConnectionFactory)
                 .cacheDefaults(defaultCacheConfig)
                 .withInitialCacheConfigurations(cacheConfigurationMap)
                 .build();
 
     }
-
-
 }
 

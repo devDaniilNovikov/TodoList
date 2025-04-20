@@ -1,23 +1,44 @@
 package dn.tasktracker.service;
 
+import dn.tasktracker.dto.user.UserCreateRequest;
+import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.TaskEntity;
+import dn.tasktracker.entity.UserEntity;
+import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Set;
 
 public interface UserService {
 
-    void createAccount(String username, char[] password);
+    List<UserResponse> findAllByIds(List<Long> ids);
 
-    void banAccount(String userId);
 
-    void deleteAccount(String userId);
+    List<UserResponse> findAll(Pageable pageable);
 
-    void changePassword(String oldPassword,
-                        String newPassword,
-                        String userId);
+    UserResponse createAccount(UserCreateRequest userCreateRequest);
 
-    void setTasks(Set<TaskEntity> tasks,
-                  String userId);
+    UserResponse getById(Long userId);
+
+    UserResponse getByUsername(String username);
+
+    UserResponse getByPhoneNumber(String phoneNumber);
+
+    void banAccount(Long userId);
+
+    void deleteAccount(Long userId);
+
+    void changePassword(String oldPassword, String newPassword, Long userId);
+
+    void setTasks(Set<TaskEntity> tasks, Long userId);
+
+
+
+
+
+
+
+
 
 
 

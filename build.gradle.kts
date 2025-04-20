@@ -33,8 +33,14 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.mapstruct:mapstruct:1.5.5.Final")
+	// https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
+	implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+	// https://mvnrepository.com/artifact/com.google.code.gson/gson
+	implementation("com.google.code.gson:gson:2.11.0")
+	implementation ("io.vavr:vavr:0.10.4")
 	implementation("com.squareup.okhttp3:okhttp:4.12.0")
-	annotationProcessor ("org.projectlombok:lombok-mapstruct-binding:0.2.0")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    annotationProcessor ("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 	annotationProcessor ("org.mapstruct:mapstruct-processor:1.5.5.Final")
 	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")

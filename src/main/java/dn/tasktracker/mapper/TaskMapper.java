@@ -1,10 +1,11 @@
 package dn.tasktracker.mapper;
 
 
-import dn.tasktracker.dto.TaskDto;
+import dn.tasktracker.dto.ListTaskResponse;
+import dn.tasktracker.dto.TaskRequest;
+import dn.tasktracker.dto.TaskResponse;
 import dn.tasktracker.entity.TaskEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
@@ -13,12 +14,23 @@ import java.util.List;
 public interface TaskMapper {
 
 
-    TaskEntity toEntity(TaskDto dto);
 
-    TaskDto toDto(TaskEntity  taskEntity);
+    TaskEntity toEntity(TaskRequest dto);
 
-    List<TaskEntity> toEntityList(List<TaskDto> dtoList);
+    TaskEntity toEntity(TaskResponse dto);
 
-    List<TaskDto> toDtoList(List<TaskEntity> entityList);
+    TaskResponse toDto(TaskEntity taskEntity);
+
+    List<TaskEntity> toEntityList(List<TaskResponse> dtoList);
+
+    List<TaskResponse> toDtoList(List<TaskEntity> entityList);
+
+    default ListTaskResponse mapToResponseList(List<TaskEntity> taskEntities){
+        ListTaskResponse listTaskResponse = new ListTaskResponse();
+        listTaskResponse.setTasks(taskEntities.stream()
+                .map(this::toDto)
+                .toList());
+        return listTaskResponse;
+    }
 
 }
