@@ -6,6 +6,7 @@ import dn.tasktracker.dto.TaskRequest;
 import dn.tasktracker.dto.TaskResponse;
 import dn.tasktracker.entity.TaskEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
@@ -19,6 +20,7 @@ public interface TaskMapper {
 
     TaskEntity toEntity(TaskResponse dto);
 
+    @Mapping(source = "user.username", target = "worker")
     TaskResponse toDto(TaskEntity taskEntity);
 
     List<TaskEntity> toEntityList(List<TaskResponse> dtoList);

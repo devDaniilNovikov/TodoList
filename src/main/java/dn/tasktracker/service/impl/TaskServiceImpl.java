@@ -96,23 +96,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public Map<Long,List<TaskEntity>>  setTimeForTask(Long userId, Long taskId, Long time) {
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(
-                        MessageFormat.format("User with id {0} not found!", userId)));
-
-        Map<Long,List<TaskEntity>> taskMap = taskRepository.findAll()
-                .stream()
-                .flatMap(taskEntity -> taskEntity.getUsers().stream())
-                .filter(userEntity -> userEntity.getId().equals(userId))
-                .map(UserEntity::getTasks)
-                .flatMap(Collection::stream)
-                .collect(Collectors.groupingBy(TaskEntity::getId,
-                        Collectors.filtering(TaskEntity::isCompletedAt,
-                                Collectors.toList())));
-        redisTemplate.opsForSet().add(String.valueOf(user.getId()),taskMap);
-        redisTemplate.expire(String.valueOf(user.getId()),ttl.toMinutes(),TimeUnit.MINUTES);
-        log.info("Tasks is: {}",taskMap.values());
-        return taskMap;
+        return null;
 
     }
 
@@ -126,26 +110,32 @@ public class TaskServiceImpl implements TaskService {
         taskEntity.setCreatedAt(LocalDateTime.now());
         taskEntity.setUpdatedAt(LocalDateTime.now());
         taskEntity.setCompletedAt(false);
-        taskEntity.setRating(taskRequest.getRating());
-        taskEntity.setU
+        taskEntity.setUser(userRepository
+                .findById(taskRequest.getUserId())
+                .orElseThrow(() -> new UserNotFoundException(
+                        MessageFormat.format("User with id {0} not found!", taskRequest.getUserId())
+                )));
+        var user = taskEntity.getUser();
+        user.addTask(taskEntity);
         taskRepository.save(taskEntity);
         eventPublisher.publishEvent(
                 new TaskCreateEvent(
                         taskEntity.getId(),
                         taskEntity.getTitle(),
                         taskEntity.getDescription(),
-                        taskEntity.getStatus()
+                        taskEntity.getStatus(),
+                        taskEntity.getUser().getUsername()
+
                 )
         );
 
         log.info("Task: {} is saved",taskEntity);
-        return userMap;
         try {
-            String taskAsJsonString = objectMapper.writeValueAsString()
-            redisTemplate.opsForValue().set(String.valueOf(taskEntity.getId()),taskAsJsonString);
-            redisTemplate.expire(String.valueOf(String.valueOf(taskEntity.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
-            log.info("Task: {} is created", users);
-            return Map.of(taskEntity.getTitle(),users);
+            var mappingTask = taskMapper.toDto(taskEntity);
+            String taskAsJsonString = objectMapper.writeValueAsString(mappingTask);
+            redisTemplate.opsForValue().set(String.valueOf(mappingTask.getId()),taskAsJsonString);
+            redisTemplate.expire(String.valueOf(String.valueOf(mappingTask.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
+            return mappingTask;
         }catch (JsonProcessingException e){
             log.error("Error writing value in redis: {}",e.getLocalizedMessage());
             return null;
@@ -158,7 +148,6 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(()->new TaskNotFoundException(MessageFormat.format("Задача с идентификатором {} не найдена", taskId)));
 
          List<UserEntity> users = userRepository.findAllById(userIds);
-         task.setUsers(users);
          taskRepository.save(task);
          userRepository.saveAll(users);
          log.info("Task created! {}", task);
@@ -213,7 +202,8 @@ public class TaskServiceImpl implements TaskService {
                             taskEntity.getId(),
                             taskEntity.getTitle(),
                             taskEntity.getDescription(),
-                            taskEntity.getStatus()));
+                            taskEntity.getStatus(),
+                            taskEntity.getUser().getUsername()));
                     log.info("Id of deleted task: {}", taskEntity.getId());
                 },()->{
                     throw new TaskNotFoundException(

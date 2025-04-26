@@ -51,7 +51,7 @@ public class TaskEntity implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY,cascade = {CascadeType.PERSIST,
     CascadeType.MERGE,CascadeType.REFRESH})
     @JoinColumn(name = "user_id",nullable = false)
-    private UserEntity users;
+    private UserEntity user;
 
     @OneToMany(mappedBy = "tasks")
     private List<SubTaskEntity> subTasks = new ArrayList<>();
@@ -69,9 +69,6 @@ public class TaskEntity implements Serializable {
 
 
 
-    public void addUser(UserEntity user){
-        users.add(user);
-    }
 
 
     @Override
@@ -90,11 +87,11 @@ public class TaskEntity implements Serializable {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof TaskEntity that)) return false;
-        return isCompletedAt() == that.isCompletedAt() && Objects.equals(getId(), that.getId()) && Objects.equals(getTitle(), that.getTitle()) && Objects.equals(getDescription(), that.getDescription()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getCreatedAt(), that.getCreatedAt()) && Objects.equals(getRequireUserId(), that.getRequireUserId()) && Objects.equals(getUpdatedAt(), that.getUpdatedAt()) && Objects.equals(getUsers(), that.getUsers());
+        return completedAt == that.completedAt && Objects.equals(id, that.id) && Objects.equals(title, that.title) && Objects.equals(description, that.description) && Objects.equals(status, that.status) && Objects.equals(createdAt, that.createdAt) && Objects.equals(requireUserId, that.requireUserId) && Objects.equals(updatedAt, that.updatedAt) && Objects.equals(user, that.user) && Objects.equals(subTasks, that.subTasks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getTitle(), getDescription(), getStatus(), isCompletedAt(), getCreatedAt(), getRequireUserId(), getUpdatedAt(), getUsers());
+        return Objects.hash(id, title, description, status, completedAt, createdAt, requireUserId, updatedAt, user, subTasks);
     }
 }

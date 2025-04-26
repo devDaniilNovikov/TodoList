@@ -42,7 +42,7 @@ public class UserEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "users")
+    @OneToMany(mappedBy = "user")
     private List<TaskEntity> tasks = new ArrayList<>();
 
     public void addTask(TaskEntity task){
