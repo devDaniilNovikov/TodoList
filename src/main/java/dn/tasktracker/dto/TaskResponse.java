@@ -31,7 +31,7 @@ public class TaskResponse {
     private LocalDateTime createdAt;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
     private LocalDateTime updatedAt;
-    private List<UserResponse> users;
+    private String worker;
 
 
 }

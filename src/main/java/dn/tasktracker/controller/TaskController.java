@@ -75,9 +75,8 @@ public class TaskController {
 
     @PostMapping(CREATE_TASK)
     @ResponseStatus(HttpStatus.CREATED)
-    public Map<String,List<UserEntity>> createTask(@RequestBody @Valid TaskRequest taskRequest,
-                                                     @RequestParam(required = false) List<Long> userIds){
-        return taskService.save(taskRequest, userIds);
+    public TaskResponse createTask(@RequestBody @Valid TaskRequest taskRequest){
+        return taskService.save(taskRequest);
     }
 
     @PatchMapping(UPDATE_TASK)

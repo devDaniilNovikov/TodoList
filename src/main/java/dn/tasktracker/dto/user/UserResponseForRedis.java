@@ -5,14 +5,13 @@ import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResponseForRedis {
@@ -25,6 +24,6 @@ public class UserResponseForRedis {
     private String createdAt;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
     private String updatedAt;
-    private List<UserEntity> users;
+    private List<TaskEntity> tasks;
     private Double rating;
 }

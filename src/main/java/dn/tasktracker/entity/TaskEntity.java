@@ -48,19 +48,14 @@ public class TaskEntity implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
     private LocalDateTime updatedAt;
 
-    @ManyToMany(mappedBy = "tasks")
-    private List<UserEntity> users = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY,cascade = {CascadeType.PERSIST,
+    CascadeType.MERGE,CascadeType.REFRESH})
+    @JoinColumn(name = "user_id",nullable = false)
+    private UserEntity users;
 
     @OneToMany(mappedBy = "tasks")
     private List<SubTaskEntity> subTasks = new ArrayList<>();
 
-    private Long timeToComplete;
-
-    private Double rating;
-
-    public void addUsers(List<UserEntity> users){
-        this.users.addAll(users);
-    }
 
     public boolean isExpired(){
         return ChronoUnit.MINUTES

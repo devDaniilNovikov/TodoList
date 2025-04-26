@@ -33,6 +33,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.mapstruct:mapstruct:1.5.5.Final")
+	implementation ("org.springframework.boot:spring-boot-starter-amqp")
 	// https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
 	implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 	// https://mvnrepository.com/artifact/com.google.code.gson/gson

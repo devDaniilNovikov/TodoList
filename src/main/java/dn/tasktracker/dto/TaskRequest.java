@@ -21,17 +21,12 @@ public class TaskRequest implements Serializable {
     private String title;
     @NotNull(message = "description cannot be blank")
     private String description;
-//    @NotNull(message = "status cannot be blank")
-//    private String status;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
     private LocalDateTime createdAt;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
     private LocalDateTime updatedAt;
-
+    @NotNull
     private Long userId;
-
-    private List<Long> usersId;
-
     @NotNull
     private Double rating;
 

@@ -16,7 +16,6 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 @EnableRabbit
 @Configuration
-
 public class RabbitConfig {
 
     @Value("${spring.rabbitmq.host}")

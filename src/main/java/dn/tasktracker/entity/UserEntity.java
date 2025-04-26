@@ -42,9 +42,7 @@ public class UserEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
     private LocalDateTime updatedAt;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(inverseJoinColumns = @JoinColumn(name = "task_id"),
-    joinColumns = @JoinColumn(name = "user_id"),schema = "tasktracker")
+    @OneToMany(mappedBy = "users")
     private List<TaskEntity> tasks = new ArrayList<>();
 
     public void addTask(TaskEntity task){

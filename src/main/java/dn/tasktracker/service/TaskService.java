@@ -20,7 +20,7 @@ public interface TaskService {
 
     TaskResponse getById(Long id);
 
-    Map<String,List<UserEntity>> save(TaskRequest taskRequest, List<Long> userIds);
+    TaskResponse save(TaskRequest taskRequest);
 
     Map<String,List<UserEntity>> setUsersForTask(List<Long> userIds, Long taskId);
 

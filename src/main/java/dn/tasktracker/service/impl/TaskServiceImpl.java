@@ -1,14 +1,10 @@
 package dn.tasktracker.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.*;
-import dn.tasktracker.configuration.CustomObjectMapper;
 import dn.tasktracker.dto.ListTaskResponse;
 import dn.tasktracker.dto.TaskRequest;
 import dn.tasktracker.dto.TaskResponse;
 import dn.tasktracker.dto.TaskSortDto;
-import dn.tasktracker.dto.user.UserResponse;
-import dn.tasktracker.dto.user.UserResponseForRedis;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.TaskStatus;
 import dn.tasktracker.entity.UserEntity;
@@ -22,17 +18,13 @@ import dn.tasktracker.repository.TaskRepository;
 import dn.tasktracker.repository.TaskSpecification;
 import dn.tasktracker.repository.UserRepository;
 import dn.tasktracker.service.TaskService;
-import dn.tasktracker.utils.DateTimeUtil;
-import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,9 +34,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 @Service
@@ -128,7 +118,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public Map<String,List<UserEntity>> save(TaskRequest taskRequest,List<Long> userIds) {
+    public TaskResponse save(TaskRequest taskRequest) {
         TaskEntity taskEntity = new TaskEntity();
         taskEntity.setTitle(taskRequest.getTitle());
         taskEntity.setDescription(taskRequest.getDescription());
@@ -137,14 +127,7 @@ public class TaskServiceImpl implements TaskService {
         taskEntity.setUpdatedAt(LocalDateTime.now());
         taskEntity.setCompletedAt(false);
         taskEntity.setRating(taskRequest.getRating());
-        List<UserEntity> users = userRepository.findAllById(userIds)
-                .stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        Map<String,List<UserEntity>> userMap = new HashMap<>();
-        userMap.put(taskEntity.getTitle(),users);
-        log.info("Users: {} is added to task",users);
+        taskEntity.setU
         taskRepository.save(taskEntity);
         eventPublisher.publishEvent(
                 new TaskCreateEvent(
@@ -157,17 +140,16 @@ public class TaskServiceImpl implements TaskService {
 
         log.info("Task: {} is saved",taskEntity);
         return userMap;
-//        try {
-//            ObjectMapper mapper = CustomObjectMapper.createObjectMapper();
-//            String taskAsJsonString = mapper.writeValueAsString(users);
-//            redisTemplate.opsForValue().set(String.valueOf(taskEntity.getId()),taskAsJsonString);
-//            redisTemplate.expire(String.valueOf(String.valueOf(taskEntity.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
-//            log.info("Task: {} is created", users);
-//            return Map.of(taskEntity.getTitle(),users);
-//        }catch (JsonProcessingException e){
-//            log.error("Error writing value in redis: {}",e.getLocalizedMessage());
-//            return null;
-//        }
+        try {
+            String taskAsJsonString = objectMapper.writeValueAsString()
+            redisTemplate.opsForValue().set(String.valueOf(taskEntity.getId()),taskAsJsonString);
+            redisTemplate.expire(String.valueOf(String.valueOf(taskEntity.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
+            log.info("Task: {} is created", users);
+            return Map.of(taskEntity.getTitle(),users);
+        }catch (JsonProcessingException e){
+            log.error("Error writing value in redis: {}",e.getLocalizedMessage());
+            return null;
+        }
     }
 
     @Override
