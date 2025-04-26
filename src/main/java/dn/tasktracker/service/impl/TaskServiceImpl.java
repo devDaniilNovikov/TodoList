@@ -2,10 +2,13 @@ package dn.tasktracker.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.*;
+import dn.tasktracker.configuration.CustomObjectMapper;
 import dn.tasktracker.dto.ListTaskResponse;
 import dn.tasktracker.dto.TaskRequest;
 import dn.tasktracker.dto.TaskResponse;
 import dn.tasktracker.dto.TaskSortDto;
+import dn.tasktracker.dto.user.UserResponse;
+import dn.tasktracker.dto.user.UserResponseForRedis;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.TaskStatus;
 import dn.tasktracker.entity.UserEntity;
@@ -24,6 +27,7 @@ import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.context.ApplicationEventPublisher;
@@ -40,12 +44,13 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Service
-@Log4j2
 @CacheConfig(cacheManager = "redisCacheManager")
 @RequiredArgsConstructor
+@Slf4j
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
@@ -53,6 +58,7 @@ public class TaskServiceImpl implements TaskService {
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String,Object> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final UserMapper userMapper;
     private final UserRepository userRepository;
     @Value("${app.cache.caches.taskAfterCreate.ttl}")
     private Duration ttl;
@@ -70,8 +76,8 @@ public class TaskServiceImpl implements TaskService {
                 .stream()
                 .peek(tasks->{
                     redisTemplate.opsForList().leftPush(cacheNames.get(1), tasks.toString());
-                    redisTemplate.expire(cacheNames.get(1), ttl.toMinutes(), TimeUnit.MINUTES);
-                }).toList());
+                    redisTemplate.expire(cacheNames.get(1), ttl.toMinutes(), TimeUnit.MINUTES);})
+                .toList());
     }
 
     @Override
@@ -121,22 +127,24 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    @Lock(value = LockModeType.PESSIMISTIC_READ)
     @Transactional
-    public TaskResponse save(TaskRequest taskRequest) {
+    public Map<String,List<UserEntity>> save(TaskRequest taskRequest,List<Long> userIds) {
         TaskEntity taskEntity = new TaskEntity();
-        taskEntity.setId(taskEntity.getId());
         taskEntity.setTitle(taskRequest.getTitle());
         taskEntity.setDescription(taskRequest.getDescription());
         taskEntity.setStatus(String.valueOf(TaskStatus.IN_PROGRESS));
         taskEntity.setCreatedAt(LocalDateTime.now());
         taskEntity.setUpdatedAt(LocalDateTime.now());
         taskEntity.setCompletedAt(false);
-        taskEntity.setUserId(taskRequest.getUserId());
         taskEntity.setRating(taskRequest.getRating());
-        userRepository.findById(
-                taskEntity.getUserId())
-               .ifPresent(u->u.addTask(taskEntity));
+        List<UserEntity> users = userRepository.findAllById(userIds)
+                .stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        Map<String,List<UserEntity>> userMap = new HashMap<>();
+        userMap.put(taskEntity.getTitle(),users);
+        log.info("Users: {} is added to task",users);
         taskRepository.save(taskEntity);
         eventPublisher.publishEvent(
                 new TaskCreateEvent(
@@ -146,33 +154,36 @@ public class TaskServiceImpl implements TaskService {
                         taskEntity.getStatus()
                 )
         );
-        TaskResponse taskResponse = new TaskResponse();
-        taskResponse.setId(taskEntity.getId());
-        taskResponse.setTitle(taskEntity.getTitle());
-        taskResponse.setDescription(taskEntity.getDescription());
-        taskResponse.setStatus(taskEntity.getStatus());
-        taskResponse.setCreatedAt(taskEntity.getCreatedAt());
-        taskResponse.setUpdatedAt(taskEntity.getUpdatedAt());
-        taskResponse.setUsers(taskEntity.getUsers());
-        taskResponse.setRating(taskEntity.getRating());
 
-        log.info("Task: {} is saved",taskEntity.toString());
-        try {
-            TaskResponse task =  taskMapper.toDto(taskEntity);
-            String taskAsJsonString = objectMapper.writeValueAsString(task);
-            redisTemplate.opsForValue().setIfAbsent(String.valueOf(task.getId()), taskAsJsonString, ttl);
-            log.info("Task: {} is created", task.toString());
-            return task;
-        }catch (Exception e){
-            log.error("Error writing value in redis: {}",e.getLocalizedMessage());
-            return null;
-        }
+        log.info("Task: {} is saved",taskEntity);
+        return userMap;
+//        try {
+//            ObjectMapper mapper = CustomObjectMapper.createObjectMapper();
+//            String taskAsJsonString = mapper.writeValueAsString(users);
+//            redisTemplate.opsForValue().set(String.valueOf(taskEntity.getId()),taskAsJsonString);
+//            redisTemplate.expire(String.valueOf(String.valueOf(taskEntity.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
+//            log.info("Task: {} is created", users);
+//            return Map.of(taskEntity.getTitle(),users);
+//        }catch (JsonProcessingException e){
+//            log.error("Error writing value in redis: {}",e.getLocalizedMessage());
+//            return null;
+//        }
     }
 
     @Override
-    public void setTaskForUser(TaskRequest taskRequest, String userId) {
+    public Map<String,List<UserEntity>> setUsersForTask(List<Long> userIds, Long taskId) {
+         TaskEntity task =  taskRepository.findById(taskId)
+                .orElseThrow(()->new TaskNotFoundException(MessageFormat.format("Задача с идентификатором {} не найдена", taskId)));
 
+         List<UserEntity> users = userRepository.findAllById(userIds);
+         task.setUsers(users);
+         taskRepository.save(task);
+         userRepository.saveAll(users);
+         log.info("Task created! {}", task);
+         return Map.of(task.getTitle(),users);
     }
+
+
 
 
     @Override

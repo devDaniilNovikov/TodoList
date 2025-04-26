@@ -42,41 +42,44 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserResponse> findAllByIds(List<Long> ids) {
-        if (ids.isEmpty()){
-            return Collections.emptyList();
-        }
-        List<UserEntity> users = userRepository.findAllById(
-                 ids.stream()
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList());
-        try {
-            List<Long> userIds = users.stream()
-                    .map(UserEntity::getId)
-                    .toList();
-            List<UserResponseForRedis> userResponseForRedis = users.stream()
-                    .map(this::mapToRedisDto)
-                    .flatMap(Collection::stream)
-                    .toList();
-            var valueToRedis = objectMapper.writeValueAsString(userResponseForRedis);
-            redisTemplate.opsForValue().set(String.valueOf(userIds),valueToRedis);
-            return userMapper.toDtoList(users);
-        }catch (JsonProcessingException e){
-            throw new RuntimeException(e);
-         }
-
+        return null;
     }
 
-    private  List<UserResponseForRedis> mapToRedisDto(UserEntity user){
-        UserResponseForRedis userResponseForRedis = new UserResponseForRedis();
-        userResponseForRedis.setId(user.getId());
-        userResponseForRedis.setUsername(user.getUsername());
-        userResponseForRedis.setPhoneNumber(user.getPhoneNumber());
-        userResponseForRedis.setStatus(user.getStatus());
-        userResponseForRedis.setCreatedAt(String.valueOf(user.getCreatedAt()));
-        userResponseForRedis.setUpdatedAt(String.valueOf(user.getUpdatedAt()));
-        return List.of(userResponseForRedis);
-    }
+//        if (ids.isEmpty()){
+//            return Collections.emptyList();
+//        }
+//        List<UserEntity> users = userRepository.findAllById(
+//                 ids.stream()
+//                .filter(Objects::nonNull)
+//                .distinct()
+//                .toList());
+//        try {
+//            List<Long> userIds = users.stream()
+//                    .map(UserEntity::getId)
+//                    .toList();
+//            List<UserResponseForRedis> userResponseForRedis = users.stream()
+//                    .map(this::mapToRedisDto)
+//                    .flatMap(Collection::stream)
+//                    .toList();
+//            var valueToRedis = objectMapper.writeValueAsString(userResponseForRedis);
+//            redisTemplate.opsForValue().set(String.valueOf(userIds),valueToRedis);
+//            return userMapper.toDtoList(users);
+//        }catch (JsonProcessingException e){
+//            throw new RuntimeException(e);
+//         }
+//
+//    }
+
+//    private  List<UserResponseForRedis> mapToRedisDto(UserEntity user){
+//        UserResponseForRedis userResponseForRedis = new UserResponseForRedis();
+//        userResponseForRedis.setId(user.getId());
+//        userResponseForRedis.setUsername(user.getUsername());
+//        userResponseForRedis.setPhoneNumber(user.getPhoneNumber());
+//        userResponseForRedis.setStatus(user.getStatus());
+//        userResponseForRedis.setCreatedAt(String.valueOf(user.getCreatedAt()));
+//        userResponseForRedis.setUpdatedAt(String.valueOf(user.getUpdatedAt()));
+//        return List.of(userResponseForRedis);
+//    }
 
 
     @Override

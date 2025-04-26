@@ -24,11 +24,11 @@ import java.util.*;
 public class TaskEntity implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE,generator = "task_id_seq")
-    @SequenceGenerator(name = "task_id_seq", sequenceName = "task_id_seq",schema = "tasktracker",allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @SequenceGenerator(name = "task_id_seq", sequenceName = "task_id_seq",schema = "tasktracker",allocationSize = 1)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false,unique = true)
     private String title;
 
     private String description;
@@ -49,14 +49,18 @@ public class TaskEntity implements Serializable {
     private LocalDateTime updatedAt;
 
     @ManyToMany(mappedBy = "tasks")
-    @JsonBackReference
     private List<UserEntity> users = new ArrayList<>();
 
-    private Long userId;
+    @OneToMany(mappedBy = "tasks")
+    private List<SubTaskEntity> subTasks = new ArrayList<>();
 
     private Long timeToComplete;
 
     private Double rating;
+
+    public void addUsers(List<UserEntity> users){
+        this.users.addAll(users);
+    }
 
     public boolean isExpired(){
         return ChronoUnit.MINUTES
@@ -70,8 +74,8 @@ public class TaskEntity implements Serializable {
 
 
 
-    public void addUser(List<UserEntity> users){
-        this.users.addAll(users);
+    public void addUser(UserEntity user){
+        users.add(user);
     }
 
 
@@ -91,11 +95,11 @@ public class TaskEntity implements Serializable {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof TaskEntity that)) return false;
-        return isCompletedAt() == that.isCompletedAt() && Objects.equals(getId(), that.getId()) && Objects.equals(getTitle(), that.getTitle()) && Objects.equals(getDescription(), that.getDescription()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getCreatedAt(), that.getCreatedAt()) && Objects.equals(getRequireUserId(), that.getRequireUserId()) && Objects.equals(getUpdatedAt(), that.getUpdatedAt()) && Objects.equals(getUsers(), that.getUsers()) && Objects.equals(getUserId(), that.getUserId());
+        return isCompletedAt() == that.isCompletedAt() && Objects.equals(getId(), that.getId()) && Objects.equals(getTitle(), that.getTitle()) && Objects.equals(getDescription(), that.getDescription()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getCreatedAt(), that.getCreatedAt()) && Objects.equals(getRequireUserId(), that.getRequireUserId()) && Objects.equals(getUpdatedAt(), that.getUpdatedAt()) && Objects.equals(getUsers(), that.getUsers());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getTitle(), getDescription(), getStatus(), isCompletedAt(), getCreatedAt(), getRequireUserId(), getUpdatedAt(), getUsers(), getUserId());
+        return Objects.hash(getId(), getTitle(), getDescription(), getStatus(), isCompletedAt(), getCreatedAt(), getRequireUserId(), getUpdatedAt(), getUsers());
     }
 }

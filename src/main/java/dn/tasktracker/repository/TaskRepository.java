@@ -15,10 +15,4 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
 
     Optional<TaskEntity> findByTitle(String title);
 
-
-    @Query("SELECT t FROM TaskEntity t WHERE t.userId = :userId AND t.title LIKE %:title%")
-    Optional<List<TaskEntity>> findAllByUserId(@Param("userId") Long userId);
-
-    void deleteAllByUserId(Long userId);
-
 }

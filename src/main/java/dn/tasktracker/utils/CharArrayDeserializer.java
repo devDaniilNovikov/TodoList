@@ -13,6 +13,10 @@ public class CharArrayDeserializer extends JsonDeserializer<char[]> {
     public char[] deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, com.fasterxml.jackson.core.JsonProcessingException {
         String value = p.getValueAsString();
         return value != null ? value.toCharArray() : new char[0];
+
     }
+
+
+
 
 }

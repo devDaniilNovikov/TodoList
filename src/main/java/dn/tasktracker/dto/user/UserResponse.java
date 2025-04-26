@@ -20,10 +20,7 @@ import java.util.Set;
 @Builder
 public class UserResponse {
 
-    @NotBlank
     private Long id;
-    @NotBlank(message = "username cant be blank!")
-    @Size(min = 4,max = 50)
     private String username;
     private String password;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")

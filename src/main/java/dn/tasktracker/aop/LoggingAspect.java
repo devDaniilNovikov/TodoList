@@ -19,7 +19,7 @@ public class LoggingAspect {
         log.info("Метод: {} начинает свое выполнение!",joinPoint.getSignature().getName());
     }
 
-    @After("execution(* dn.tasktracker.service.impl.*.*(..))")
+    @After("execution(* dn.tasktracker.service.impl.TaskServiceImpl.*(..))")
     public void afterTaskServiceMethods(JoinPoint joinPoint) {
         log.info("Метод: {} завершил свое выполнение!", joinPoint.getSignature().getName());
     }

@@ -2,6 +2,7 @@ package dn.tasktracker.dto.user;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import dn.tasktracker.entity.TaskEntity;
+import dn.tasktracker.entity.UserEntity;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -17,11 +18,13 @@ import java.util.List;
 public class UserResponseForRedis {
 
     private Long id;
-    private String username;
-    private String password;
-    private String createdAt;
-    private String updatedAt;
-    private List<TaskEntity> tasks;
+    private String title;
+    private String description;
     private String status;
-    private String phoneNumber;
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
+    private String createdAt;
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
+    private String updatedAt;
+    private List<UserEntity> users;
+    private Double rating;
 }

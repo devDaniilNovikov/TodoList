@@ -11,7 +11,7 @@ version = "0.0.1-SNAPSHOT"
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(23)
+		languageVersion = JavaLanguageVersion.of(21)
 	}
 }
 
@@ -40,7 +40,17 @@ dependencies {
 	implementation ("io.vavr:vavr:0.10.4")
 	implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    annotationProcessor ("org.projectlombok:lombok-mapstruct-binding:0.2.0")
+	implementation("org.springframework.boot:spring-boot-starter-amqp")
+	implementation("org.springframework.boot:spring-boot-starter-integration")
+	implementation("org.springframework.integration:spring-integration-amqp")
+	implementation("org.springframework.integration:spring-integration-jdbc")
+	implementation("org.springframework.integration:spring-integration-jpa")
+	implementation("org.springframework.integration:spring-integration-redis")
+	implementation("org.springframework.integration:spring-integration-mail")
+	implementation("org.springframework.integration:spring-integration-http")
+	testImplementation("org.springframework.amqp:spring-rabbit-test")
+	testImplementation("org.springframework.integration:spring-integration-test")
+	annotationProcessor ("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 	annotationProcessor ("org.mapstruct:mapstruct-processor:1.5.5.Final")
 	compileOnly("org.projectlombok:lombok")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")

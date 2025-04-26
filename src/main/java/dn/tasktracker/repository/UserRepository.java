@@ -18,6 +18,4 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     @Query("select u from UserEntity u where u.id in :ids")
     List<UserEntity> findAllById(List<Long> ids);
 
-
-    Long id(Long id);
 }

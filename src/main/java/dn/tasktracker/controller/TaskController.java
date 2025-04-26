@@ -3,7 +3,9 @@ import dn.tasktracker.dto.ListTaskResponse;
 import dn.tasktracker.dto.TaskRequest;
 import dn.tasktracker.dto.TaskResponse;
 import dn.tasktracker.dto.TaskSortDto;
+import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.TaskEntity;
+import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +22,12 @@ public class TaskController {
     private static final String GET_ALL_TASKS = "/api/v1/tasks/list";
     private static final String GET_TASK_WITH_PAGINATION = "/api/v1/tasks/sort";
     private static final String GET_TASK_BY_ID = "/api/v1/task/{id}";
-    private static final String GET_TASK_BY_TITLE = "/api/v1/task/title/";
+    private static final String GET_TASK_BY_TITLE = "/api/v1/task/";
     private static final String CREATE_TASK = "/api/v1/task/create";
     private static final String UPDATE_TASK = "/api/v1/task/update/{id}";
     private static final String DELETE_TASK = "/api/v1/task/delete/{id}";
     private static final String SET_TIME_FOR_TASK = "/api/v1/tasks/{id}/?";
+    public static final String ADD_USERS_FOR_TASK = "/api/v1/task/{id}/add-users";
 
 
 
@@ -41,6 +44,15 @@ public class TaskController {
                                                      @RequestParam Long time){
         return taskService.setTimeForTask(userId,taskId,time);
     }
+
+    @PostMapping(ADD_USERS_FOR_TASK)
+    @ResponseStatus(HttpStatus.OK)
+    public Map<String,List<UserEntity>> addUsersForTask(@PathVariable Long id,
+                                @RequestParam List<Long> userIds){
+         return taskService.setUsersForTask(userIds,id);
+    }
+
+
 
     @GetMapping(GET_TASK_WITH_PAGINATION)
     @ResponseStatus(HttpStatus.OK)
@@ -63,8 +75,9 @@ public class TaskController {
 
     @PostMapping(CREATE_TASK)
     @ResponseStatus(HttpStatus.CREATED)
-    public TaskResponse createTask(@RequestBody @Valid TaskRequest taskRequest){
-        return taskService.save(taskRequest);
+    public Map<String,List<UserEntity>> createTask(@RequestBody @Valid TaskRequest taskRequest,
+                                                     @RequestParam(required = false) List<Long> userIds){
+        return taskService.save(taskRequest, userIds);
     }
 
     @PatchMapping(UPDATE_TASK)

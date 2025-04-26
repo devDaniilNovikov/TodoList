@@ -4,7 +4,9 @@ import dn.tasktracker.dto.ListTaskResponse;
 import dn.tasktracker.dto.TaskRequest;
 import dn.tasktracker.dto.TaskResponse;
 import dn.tasktracker.dto.TaskSortDto;
+import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.TaskEntity;
+import dn.tasktracker.entity.UserEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -18,9 +20,9 @@ public interface TaskService {
 
     TaskResponse getById(Long id);
 
-    TaskResponse save(TaskRequest taskRequest);
+    Map<String,List<UserEntity>> save(TaskRequest taskRequest, List<Long> userIds);
 
-    void setTaskForUser(TaskRequest taskRequest, String userId);
+    Map<String,List<UserEntity>> setUsersForTask(List<Long> userIds, Long taskId);
 
     TaskResponse findByTitle(String title);
 
