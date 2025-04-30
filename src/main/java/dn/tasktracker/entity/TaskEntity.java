@@ -14,9 +14,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Entity
-@Table(schema = "tasktracker",name = "tasks",indexes = {
-        @Index(columnList = "id",name = "task_id_idx",unique = true)}
-)
+@Table(schema = "tasktracker",name = "tasks")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -48,13 +46,18 @@ public class TaskEntity implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
     private LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY,cascade = {CascadeType.PERSIST,
-    CascadeType.MERGE,CascadeType.REFRESH})
+    @ManyToOne(fetch = FetchType.LAZY,cascade = {
+    CascadeType.MERGE})
     @JoinColumn(name = "user_id",nullable = false)
+    @JsonBackReference
     private UserEntity user;
 
     @OneToMany(mappedBy = "tasks")
     private List<SubTaskEntity> subTasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "tasks",cascade = CascadeType.ALL)
+    private Set<Event> events = new HashSet<>();
+
 
 
     public boolean isExpired(){

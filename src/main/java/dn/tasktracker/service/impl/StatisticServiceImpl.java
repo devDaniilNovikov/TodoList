@@ -13,7 +13,6 @@ import dn.tasktracker.service.StatisticService;
 import dn.tasktracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.mapping.Collection;
 import org.springframework.stereotype.Service;
 
 import java.text.MessageFormat;
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 @Service
 public class StatisticServiceImpl implements StatisticService {
 
-    private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final UserService userService;

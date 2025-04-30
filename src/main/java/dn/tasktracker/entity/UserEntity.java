@@ -23,7 +23,6 @@ public class UserEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @SequenceGenerator(schema = "tasktracker",name = "user_id_seq",sequenceName = "user_id_seq",allocationSize = 1)
     private Long id;
 
     @Column(unique = true, nullable = false,length = 20)
@@ -42,8 +41,14 @@ public class UserEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user",cascade = CascadeType.MERGE)
+    @JsonBackReference
     private List<TaskEntity> tasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "users",cascade = CascadeType.ALL)
+    private Set<Event> events = new HashSet<>();
+
+    private String status;
 
     public void addTask(TaskEntity task){
         tasks.add(task);
@@ -79,8 +84,6 @@ public class UserEntity {
     @Column(unique = true,length = 11)
     private String phoneNumber;
 
-
-    private String status;
 
 
 }

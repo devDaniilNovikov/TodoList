@@ -18,6 +18,12 @@ public interface UserMapper {
 
     List<UserEntity> toEntityList(List<UserResponse> userResponseList);
 
+    default List<UserResponse> mapToResponseList(List<UserEntity> userEntities) {
+        return userEntities.stream()
+                .map(this::toDto)
+                .toList();
+    }
+
 
 
 }

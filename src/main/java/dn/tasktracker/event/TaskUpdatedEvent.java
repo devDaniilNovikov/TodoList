@@ -7,6 +7,6 @@ public record TaskUpdatedEvent(
         String title,
         String description,
         String status,
-        LocalDateTime updatedAt
-) {
+        LocalDateTime updatedAt,
+        String workerName) {
 }

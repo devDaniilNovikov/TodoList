@@ -1,16 +1,10 @@
 package dn.tasktracker.service.impl;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dn.tasktracker.dto.user.UserCreateRequest;
 import dn.tasktracker.dto.user.UserResponse;
-import dn.tasktracker.dto.user.UserResponseForRedis;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.entity.UserStatus;
-import dn.tasktracker.exception.TaskNotFoundException;
 import dn.tasktracker.exception.UserNotFoundException;
 import dn.tasktracker.mapper.UserMapper;
 import dn.tasktracker.repository.TaskRepository;
@@ -18,7 +12,7 @@ import dn.tasktracker.repository.UserRepository;
 import dn.tasktracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.batch.BatchDataSource;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -42,7 +36,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserResponse> findAllByIds(List<Long> ids) {
-        return null;
+        return  userRepository.findAllById(ids)
+                .stream()
+                .map(userMapper::toDto)
+                .toList();
     }
 
 //        if (ids.isEmpty()){
@@ -83,9 +80,13 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public List<UserResponse> findAll(Pageable pageable) {
-        return List.of();
+    public List<UserEntity> findAll(Pageable pageable) {
+        return userRepository.findAll(
+                PageRequest.of(pageable.getPageNumber(),
+                        pageable.getPageSize())).getContent();
     }
+
+
 
     @Override
     @Transactional
@@ -131,8 +132,12 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
+    @Transactional
     public void banAccount(Long userId) {
-        UserEntity user = userMapper.toEntity(getById(userId));
+        UserEntity user = userRepository.findById(userId)
+                        .orElseThrow(()->new UserNotFoundException(
+                                MessageFormat.format("User with id {0} not found!", userId)
+                        ));
         user.setStatus(String.valueOf(UserStatus.BANNED));
         userRepository.save(user);
         log.info("User {} is get ban! Actual status: {}",userId, user.getStatus());
@@ -157,14 +162,37 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void changePassword(String oldPassword,
                                String newPassword,
                                Long userId) {
-
+        UserEntity user = userMapper.toEntity(getById(userId));
+        if (!user.getPassword().equals(oldPassword)) {
+            throw new IllegalArgumentException("Пароль неверный, повторите попытку снова");
+        }
+        user.setPassword(newPassword);
+        userRepository.save(user);
+        log.info("Пароль пользователя {} изменен.", user.getUsername());
     }
 
     @Override
-    public void setTasks(Set<TaskEntity> tasks, Long userId) {
+    public UserResponse setTasks(List<Long> taskIds, Long userId) {
+        UserEntity user = userMapper.toEntity(getById(userId));
+        Map<String,List<TaskEntity>> taskMap = new HashMap<>();
+        var tasks = taskRepository.findAllById(taskIds)
+                .stream()
+                .filter(task -> !task.getUser().getId().equals(userId))
+                .toList();
+        user.setTasks(tasks);
+        taskMap.put(String.valueOf(userId),user.getTasks());
+        
+        log.info("TaskMap is: {}",taskMap);
+        userRepository.save(user);
+        taskRepository.saveAll(tasks);
+        log.info("Для пользователя {} добавлены задачи: {}",
+                user.getUsername(),
+                tasks.toArray());
+        return userMapper.toDto(user);
 
     }
 

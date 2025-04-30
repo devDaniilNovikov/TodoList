@@ -38,4 +38,9 @@ public class EventHandler {
         log.info("New Event! Task status was updated: {}", taskUpdatedEvent.toString());
     }
 
+    @EventListener
+    public void handle(UserCreateEvent userCreateEvent) {
+        log.info("New Event! User is created: {}", userCreateEvent.toString());
+    }
+
 }

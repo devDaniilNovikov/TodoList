@@ -1,5 +1,6 @@
 package dn.tasktracker.service;
 
+import dn.tasktracker.dto.user.ListUserResponse;
 import dn.tasktracker.dto.user.UserCreateRequest;
 import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.TaskEntity;
@@ -13,8 +14,9 @@ public interface UserService {
 
     List<UserResponse> findAllByIds(List<Long> ids);
 
+    List<UserEntity> findAll(Pageable pageable);
 
-    List<UserResponse> findAll(Pageable pageable);
+
 
     UserResponse createAccount(UserCreateRequest userCreateRequest);
 
@@ -30,7 +32,7 @@ public interface UserService {
 
     void changePassword(String oldPassword, String newPassword, Long userId);
 
-    void setTasks(Set<TaskEntity> tasks, Long userId);
+    UserResponse setTasks(List<Long> tasks, Long userId);
 
 
 

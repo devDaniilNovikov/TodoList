@@ -21,6 +21,7 @@ configurations {
 	}
 }
 
+
 repositories {
 	mavenCentral()
 }
@@ -58,6 +59,8 @@ dependencies {
 	runtimeOnly("org.postgresql:postgresql")
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-undertow
+	implementation("org.springframework.boot:spring-boot-starter-undertow:3.4.4")
 	testImplementation("org.springframework.batch:spring-batch-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testImplementation ("org.mockito:mockito-inline:4.0.0")

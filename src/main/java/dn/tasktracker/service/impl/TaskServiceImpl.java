@@ -93,18 +93,13 @@ public class TaskServiceImpl implements TaskService {
                           MessageFormat.format("Task with id: {0} not found",id)
                         )));}
 
-    @Override
-    @Transactional
-    public Map<Long,List<TaskEntity>>  setTimeForTask(Long userId, Long taskId, Long time) {
-        return null;
 
-    }
 
     @Override
     @Transactional
-    public TaskResponse save(TaskRequest taskRequest) {
+    public TaskEntity save(TaskRequest taskRequest) {
         TaskEntity taskEntity = new TaskEntity();
-        taskEntity.setTitle(taskRequest.getTitle());
+        taskEntity.setTitle(taskRequest.getTitle().trim());
         taskEntity.setDescription(taskRequest.getDescription());
         taskEntity.setStatus(String.valueOf(TaskStatus.IN_PROGRESS));
         taskEntity.setCreatedAt(LocalDateTime.now());
@@ -124,18 +119,17 @@ public class TaskServiceImpl implements TaskService {
                         taskEntity.getTitle(),
                         taskEntity.getDescription(),
                         taskEntity.getStatus(),
-                        taskEntity.getUser().getUsername()
-
-                )
-        );
+                        taskEntity.getUser()
+                                .getUsername()));
 
         log.info("Task: {} is saved",taskEntity);
+
         try {
-            var mappingTask = taskMapper.toDto(taskEntity);
-            String taskAsJsonString = objectMapper.writeValueAsString(mappingTask);
-            redisTemplate.opsForValue().set(String.valueOf(mappingTask.getId()),taskAsJsonString);
-            redisTemplate.expire(String.valueOf(String.valueOf(mappingTask.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
-            return mappingTask;
+            var key = String.valueOf(taskEntity.getId());
+            var value = objectMapper.writeValueAsString(taskEntity);
+            redisTemplate.opsForValue().set(key, value);
+            redisTemplate.expire(String.valueOf(String.valueOf(taskEntity.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
+            return taskEntity;
         }catch (JsonProcessingException e){
             log.error("Error writing value in redis: {}",e.getLocalizedMessage());
             return null;
@@ -165,32 +159,55 @@ public class TaskServiceImpl implements TaskService {
                 )));
     }
 
-
     @Override
     @Transactional
-    @SneakyThrows
-    public void update(final Long id, final TaskRequest taskRequest) {
-        taskRepository.findById(id)
-                .map(task->{
-                            task.setTitle(Optional.ofNullable(task.getTitle())
-                                    .orElse(taskRequest.getTitle()));
-                            task.setDescription(Optional.ofNullable(task.getDescription())
-                                    .orElse(taskRequest.getTitle()));
-                            task.setStatus(Optional.ofNullable(task.getStatus())
-                                    .orElse(taskRequest.getTitle()));
-                            task.setUpdatedAt(LocalDateTime.now());
-                            taskRepository.save(task);
-                            eventPublisher.publishEvent(
-                                    new TaskUpdatedEvent(
-                                            task.getId(),
-                                            task.getTitle(),
-                                            task.getDescription(),
-                                            task.getStatus(),
-                                            task.getUpdatedAt()));
-                            return task;
-                        }).orElseThrow(() -> new TaskNotFoundException(
-                        MessageFormat.format("Task with id: {0} not found", id)));
+    public void update(Long id,
+                       final String status,
+                       Long userId) {
+        var task = taskRepository.findById(id)
+                        .orElseThrow(()->new TaskNotFoundException(
+                                MessageFormat.format("Task with id: {0} not found",id)));
+
+        task.setUser(userRepository.findById(userId).orElseThrow(()->new UserNotFoundException(
+                MessageFormat.format("User with id {0} not found!", userId))));
+        boolean isValidStatus = validStatus(status);
+        if (isValidStatus) {
+            task.setStatus(status.trim().toUpperCase());
+            taskRepository.save(task);
+            task.setUpdatedAt(LocalDateTime.now());
+            eventPublisher.publishEvent(
+                    new TaskUpdatedEvent(
+                            task.getId(),
+                            task.getTitle(),
+                            task.getDescription(),
+                            task.getStatus(),
+                            task.getUpdatedAt(),
+                            task.getUser().getUsername()));
+            try {
+                var key = String.valueOf(task.getId());
+                var value = objectMapper.writeValueAsString(task);
+                redisTemplate.opsForValue().set(key, value);
+                redisTemplate.expire(String.valueOf(String.valueOf(task.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
+            }catch (JsonProcessingException e){
+                log.error("Не удалось записать значение в Redis: {}",e.getLocalizedMessage());
+            }
+        }else {
+            throw new RuntimeException("UNKNOWN STATUS");
+        }
+
     }
+
+
+    private boolean validStatus(String status){
+        return status.equals(String.valueOf(TaskStatus.IN_PROGRESS)) ||
+                status.equals(String.valueOf(TaskStatus.COMPLETED)) ||
+                status.equals(String.valueOf(TaskStatus.FAILED));
+    }
+
+
+
+
+
 
     @Override
     public void deleteById(final Long id) {

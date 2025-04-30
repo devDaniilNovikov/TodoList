@@ -14,13 +14,9 @@ import java.util.List;
 @Mapper(componentModel = "spring",unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface TaskMapper {
 
-
-
-//    TaskEntity toEntity(TaskRequest dto);
-
     TaskEntity toEntity(TaskResponse dto);
 
-    @Mapping(source = "user.username", target = "worker")
+    @Mapping(source = "user.username", target = "workerName")
     TaskResponse toDto(TaskEntity taskEntity);
 
     List<TaskEntity> toEntityList(List<TaskResponse> dtoList);

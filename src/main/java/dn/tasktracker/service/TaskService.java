@@ -20,15 +20,13 @@ public interface TaskService {
 
     TaskResponse getById(Long id);
 
-    TaskResponse save(TaskRequest taskRequest);
+    TaskEntity save(TaskRequest taskRequest);
 
     Map<String,List<UserEntity>> setUsersForTask(List<Long> userIds, Long taskId);
 
     TaskResponse findByTitle(String title);
 
-    Map<Long,List<TaskEntity>> setTimeForTask(Long userId, Long taskId, Long time);
-
-    void update(Long id, TaskRequest taskRequest);
+    void update(Long id,String status,Long userId);
 
     void deleteById(Long id);
 

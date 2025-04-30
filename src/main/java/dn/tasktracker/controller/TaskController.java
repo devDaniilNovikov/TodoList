@@ -27,25 +27,20 @@ public class TaskController {
     private static final String UPDATE_TASK = "/api/v1/task/update/{id}";
     private static final String DELETE_TASK = "/api/v1/task/delete/{id}";
     private static final String SET_TIME_FOR_TASK = "/api/v1/tasks/{id}/?";
-    public static final String ADD_USERS_FOR_TASK = "/api/v1/task/{id}/add-users";
+    private static final String ADD_USERS_FOR_TASK = "/api/v1/task/{id}/add-users";
+    private static final String UPDATE_TASK_STATUS = "/api/v1/task/update/status/{id}";
+    private static final String JSON_CONTENT_TYPE = "application/json";
+    
 
 
 
-    @GetMapping(value = GET_ALL_TASKS)
+    @GetMapping(value = GET_ALL_TASKS,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.OK)
     public ListTaskResponse findAll(){
         return taskService.getAll();
     }
 
-    @PostMapping(SET_TIME_FOR_TASK)
-    @ResponseStatus(HttpStatus.OK)
-    public Map<Long,List<TaskEntity>> setTimeForTask(@PathVariable("id") Long taskId,
-                                                     @RequestParam Long userId,
-                                                     @RequestParam Long time){
-        return taskService.setTimeForTask(userId,taskId,time);
-    }
-
-    @PostMapping(ADD_USERS_FOR_TASK)
+    @PostMapping(value = ADD_USERS_FOR_TASK,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.OK)
     public Map<String,List<UserEntity>> addUsersForTask(@PathVariable Long id,
                                 @RequestParam List<Long> userIds){
@@ -54,35 +49,37 @@ public class TaskController {
 
 
 
-    @GetMapping(GET_TASK_WITH_PAGINATION)
+    @GetMapping(value = GET_TASK_WITH_PAGINATION,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.OK)
     public ListTaskResponse findAll(TaskSortDto taskDto){
         return taskService.getAll(taskDto);
     }
 
-    @GetMapping(value = GET_TASK_BY_ID)
+    @GetMapping(value = GET_TASK_BY_ID,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.OK)
     public TaskResponse findById(@PathVariable Long id){
         return taskService.getById(id);
 
     }
 
-    @GetMapping(GET_TASK_BY_TITLE)
+    @GetMapping(value = GET_TASK_BY_TITLE,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.OK)
     public TaskResponse findByTitle(@RequestParam String title){
         return taskService.findByTitle(title);
     }
 
-    @PostMapping(CREATE_TASK)
+    @PostMapping(value = CREATE_TASK,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.CREATED)
-    public TaskResponse createTask(@RequestBody @Valid TaskRequest taskRequest){
+    public TaskEntity createTask(@RequestBody TaskRequest taskRequest){
         return taskService.save(taskRequest);
     }
 
-    @PatchMapping(UPDATE_TASK)
+    @PatchMapping(value = UPDATE_TASK_STATUS)
     @ResponseStatus(HttpStatus.OK)
-    public void updateTask(@PathVariable Long id, @RequestBody TaskRequest taskRequest){
-        taskService.update(id, taskRequest);
+    public void updateTask(@PathVariable Long id,
+                           @RequestParam String status,
+                           @RequestParam Long userId){
+        taskService.update(id, status,userId);
     }
 
     @DeleteMapping(DELETE_TASK)

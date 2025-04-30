@@ -16,4 +16,5 @@ import java.util.List;
 public class ListTaskResponse {
 
     private List<TaskResponse> tasks = new ArrayList<>();
+
 }

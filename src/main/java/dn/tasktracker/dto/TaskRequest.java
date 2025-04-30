@@ -17,6 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class TaskRequest implements Serializable {
+    private Long id;
     @NotNull(message = "title cannot be blank")
     private String title;
     @NotNull(message = "description cannot be blank")
@@ -25,10 +26,7 @@ public class TaskRequest implements Serializable {
     private LocalDateTime createdAt;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
     private LocalDateTime updatedAt;
-    @NotNull
     private Long userId;
-    @NotNull
-    private Double rating;
 
 
 }
