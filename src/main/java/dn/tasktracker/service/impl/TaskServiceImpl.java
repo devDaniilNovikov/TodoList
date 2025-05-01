@@ -21,6 +21,7 @@ import dn.tasktracker.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,6 +30,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -50,6 +52,7 @@ public class TaskServiceImpl implements TaskService {
     private final ObjectMapper objectMapper;
     private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final OkHttpClient okHttpClient;
     @Value("${app.cache.caches.taskAfterCreate.ttl}")
     private Duration ttl;
     @Value("${spring.cache.cache-names}")

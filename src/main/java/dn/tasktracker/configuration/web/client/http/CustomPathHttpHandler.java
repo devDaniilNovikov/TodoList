@@ -1,4 +1,4 @@
-package dn.tasktracker.configuration.web;
+package dn.tasktracker.configuration.web.client.http;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.PathHandler;

@@ -21,7 +21,6 @@ import org.springframework.integration.support.json.Jackson2JsonObjectMapper;
 
 @Slf4j
 @RequiredArgsConstructor
-@EnableRabbit
 @Configuration
 public class RabbitConfig {
 
@@ -45,6 +44,7 @@ public class RabbitConfig {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(new Jackson2JsonMessageConverter());
         rabbitTemplate.setMandatory(true);
+
         rabbitTemplate.setReturnsCallback(returned -> {
             log.error("Сообщение не доставлено. Код ответа: {}, текст ответа: {}, обменник: {}, ключ маршрутизации: {}",
                     returned.getReplyCode(), returned.getReplyText(), returned.getExchange(), returned.getRoutingKey());

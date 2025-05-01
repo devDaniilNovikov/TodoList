@@ -14,11 +14,16 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Entity
-@Table(schema = "tasktracker",name = "tasks")
+@Table(schema = "tasktracker", name = "tasks",
+        indexes = {
+                @Index(name = "idx_tasks_user_id", columnList = "user_id"),
+                @Index(name = "idx_tasks_title", columnList = "title")
+        })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class TaskEntity implements Serializable {
 
     @Id
@@ -39,8 +44,6 @@ public class TaskEntity implements Serializable {
     @CreationTimestamp
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
     private LocalDateTime createdAt;
-
-    private Long requireUserId;
 
     @UpdateTimestamp
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
@@ -70,10 +73,6 @@ public class TaskEntity implements Serializable {
         return status.equals("FAILED");
     }
 
-
-
-
-
     @Override
     public String toString() {
         return "TaskEntity{" +
@@ -89,12 +88,13 @@ public class TaskEntity implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof TaskEntity that)) return false;
-        return completedAt == that.completedAt && Objects.equals(id, that.id) && Objects.equals(title, that.title) && Objects.equals(description, that.description) && Objects.equals(status, that.status) && Objects.equals(createdAt, that.createdAt) && Objects.equals(requireUserId, that.requireUserId) && Objects.equals(updatedAt, that.updatedAt) && Objects.equals(user, that.user) && Objects.equals(subTasks, that.subTasks);
+        if (o == null || getClass() != o.getClass()) return false;
+        TaskEntity that = (TaskEntity) o;
+        return completedAt == that.completedAt && Objects.equals(id, that.id) && Objects.equals(title, that.title) && Objects.equals(description, that.description) && Objects.equals(status, that.status) && Objects.equals(createdAt, that.createdAt) && Objects.equals(updatedAt, that.updatedAt) && Objects.equals(user, that.user) && Objects.equals(subTasks, that.subTasks) && Objects.equals(events, that.events);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, description, status, completedAt, createdAt, requireUserId, updatedAt, user, subTasks);
+        return Objects.hash(id, title, description, status, completedAt, createdAt, updatedAt, user, subTasks, events);
     }
 }

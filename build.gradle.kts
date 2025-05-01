@@ -35,6 +35,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.mapstruct:mapstruct:1.5.5.Final")
 	implementation ("org.springframework.boot:spring-boot-starter-amqp")
+	implementation("org.apache.poi:poi:5.2.3")
+	implementation("org.apache.poi:poi-ooxml:5.2.3")
 	// https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
 	implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 	// https://mvnrepository.com/artifact/com.google.code.gson/gson
@@ -59,8 +61,12 @@ dependencies {
 	runtimeOnly("org.postgresql:postgresql")
 	annotationProcessor("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	implementation ("org.springframework.boot:spring-boot-starter-mail")
 	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-undertow
 	implementation("org.springframework.boot:spring-boot-starter-undertow:3.4.4")
+	implementation("software.amazon.awssdk:s3:2.20.0")
+	// https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
+	implementation("com.squareup.okhttp3:okhttp:4.12.0")
 	testImplementation("org.springframework.batch:spring-batch-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testImplementation ("org.mockito:mockito-inline:4.0.0")

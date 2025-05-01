@@ -6,11 +6,25 @@ import dn.tasktracker.dto.TaskSortDto;
 import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;
+import dn.tasktracker.service.ExportService;
 import dn.tasktracker.service.TaskService;
+import io.lettuce.core.SslOptions;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +33,7 @@ import java.util.Map;
 public class TaskController {
 
     private final TaskService taskService;
+    private final ExportService exportService;
     private static final String GET_ALL_TASKS = "/api/v1/tasks/list";
     private static final String GET_TASK_WITH_PAGINATION = "/api/v1/tasks/sort";
     private static final String GET_TASK_BY_ID = "/api/v1/task/{id}";
@@ -30,6 +45,7 @@ public class TaskController {
     private static final String ADD_USERS_FOR_TASK = "/api/v1/task/{id}/add-users";
     private static final String UPDATE_TASK_STATUS = "/api/v1/task/update/status/{id}";
     private static final String JSON_CONTENT_TYPE = "application/json";
+    public static final String DOWNLOAD_EXCEL_FILE = "/api/v1/task/excel/download";
     
 
 
@@ -86,6 +102,20 @@ public class TaskController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTask(@PathVariable Long id){
         taskService.deleteById(id);
+    }
+
+    @GetMapping(DOWNLOAD_EXCEL_FILE)
+    @SneakyThrows
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<Resource> exportTask(){
+        String filename = "tasks_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm")) + ".xlsx";
+        String filePath = System.getProperty("java.io.tmpdir") + "/" + filename;
+        exportService.exportToExcelFile(filePath);
+        ByteArrayResource byteArrayResource = new ByteArrayResource(Files.readAllBytes(Paths.get(filePath)));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=" + filename)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(byteArrayResource);
     }
 
 

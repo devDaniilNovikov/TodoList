@@ -13,13 +13,12 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
-@Table(schema = "tasktracker", name = "users")
+@Table(schema = "tasktracker", name = "users", indexes = @Index(name = "idx_users_username", columnList = "username"))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserEntity {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,8 +29,6 @@ public class UserEntity {
 
     @Column(nullable = false)
     private String password;
-
-    private Double rating;
 
     @CreationTimestamp
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
@@ -45,13 +42,37 @@ public class UserEntity {
     @JsonBackReference
     private List<TaskEntity> tasks = new ArrayList<>();
 
+    @Column(nullable = false)
+    private String status;
+
+    private String photoUrl;
+
     @OneToMany(mappedBy = "users",cascade = CascadeType.ALL)
     private Set<Event> events = new HashSet<>();
 
-    private String status;
 
     public void addTask(TaskEntity task){
+        if (task==null){
+            tasks = new ArrayList<>();
+        }
         tasks.add(task);
+    }
+
+    public void addEvent(Event event){
+        if (event == null){
+            events = new HashSet<>();
+        }
+        events.add(event);
+    }
+
+    public void removeTask(Long id){
+        tasks = tasks.stream()
+                .filter(task -> task.getId().equals(id))
+                .toList();
+    }
+
+    public void removeEvent(Event event){
+        events.remove(event);
     }
 
     @Override
@@ -60,25 +81,26 @@ public class UserEntity {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
-                ", rating=" + rating +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 ", tasks=" + tasks +
-                ", phoneNumber='" + phoneNumber + '\'' +
                 ", status='" + status + '\'' +
+                ", photoUrl='" + photoUrl + '\'' +
+                ", events=" + events +
+                ", phoneNumber='" + phoneNumber + '\'' +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        UserEntity user = (UserEntity) o;
-        return Objects.equals(id, user.id) && Objects.equals(username, user.username) && Objects.equals(password, user.password) && Objects.equals(rating, user.rating) && Objects.equals(createdAt, user.createdAt) && Objects.equals(updatedAt, user.updatedAt) && Objects.equals(tasks, user.tasks) && Objects.equals(phoneNumber, user.phoneNumber) && Objects.equals(status, user.status);
+        UserEntity that = (UserEntity) o;
+        return Objects.equals(id, that.id) && Objects.equals(username, that.username) && Objects.equals(password, that.password) && Objects.equals(createdAt, that.createdAt) && Objects.equals(updatedAt, that.updatedAt) && Objects.equals(tasks, that.tasks) && Objects.equals(status, that.status) && Objects.equals(photoUrl, that.photoUrl) && Objects.equals(events, that.events) && Objects.equals(phoneNumber, that.phoneNumber);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, username, password, rating, createdAt, updatedAt, tasks, phoneNumber, status);
+        return Objects.hash(id, username, password, createdAt, updatedAt, tasks, status, photoUrl, events, phoneNumber);
     }
 
     @Column(unique = true,length = 11)
