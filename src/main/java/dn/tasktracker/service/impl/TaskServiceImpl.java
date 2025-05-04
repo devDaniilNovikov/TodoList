@@ -7,21 +7,18 @@ import dn.tasktracker.dto.TaskResponse;
 import dn.tasktracker.dto.TaskSortDto;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.TaskStatus;
-import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.event.TaskCreateEvent;
-import dn.tasktracker.event.TaskUpdatedEvent;
 import dn.tasktracker.exception.TaskNotFoundException;
 import dn.tasktracker.exception.UserNotFoundException;
 import dn.tasktracker.mapper.TaskMapper;
-import dn.tasktracker.mapper.UserMapper;
 import dn.tasktracker.repository.TaskRepository;
 import dn.tasktracker.repository.TaskSpecification;
 import dn.tasktracker.repository.UserRepository;
 import dn.tasktracker.service.TaskService;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.context.ApplicationEventPublisher;
@@ -30,13 +27,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -50,13 +45,21 @@ public class TaskServiceImpl implements TaskService {
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String,Object> redisTemplate;
     private final ObjectMapper objectMapper;
-    private final UserMapper userMapper;
     private final UserRepository userRepository;
-    private final OkHttpClient okHttpClient;
+    private final RabbitTemplate rabbitTemplate;
+
+    private static final String USER_NOT_FOUND = "User with id {0} not found!";
+    private static final String TASK_WITH_ID_NOT_FOUND = "Task with id: {0} not found";
+    private static final String TASK_WITH_TITLE_NOT_FOUND  = "Task with title: {0} not found";
+
+
     @Value("${app.cache.caches.taskAfterCreate.ttl}")
     private Duration ttl;
     @Value("${spring.cache.cache-names}")
     private List<String> cacheNames;
+    @Value("${messaging.queue.name}")
+    private String queueName;
+
 
 
 
@@ -90,10 +93,9 @@ public class TaskServiceImpl implements TaskService {
                         .stream()
                         .peek(task->{
                             redisTemplate.opsForValue().set(String.valueOf(id), task.toString(), ttl);
-                            log.info("Task: {} is written to redis",task.toString());
                         }).findAny()
                           .orElseThrow(()->new TaskNotFoundException(
-                          MessageFormat.format("Task with id: {0} not found",id)
+                          MessageFormat.format(TASK_WITH_ID_NOT_FOUND,id)
                         )));}
 
 
@@ -108,58 +110,26 @@ public class TaskServiceImpl implements TaskService {
         taskEntity.setCreatedAt(LocalDateTime.now());
         taskEntity.setUpdatedAt(LocalDateTime.now());
         taskEntity.setCompletedAt(false);
-        taskEntity.setUser(userRepository
-                .findById(taskRequest.getUserId())
+        taskEntity.setUser(userRepository.findById(taskRequest.getUserId())
                 .orElseThrow(() -> new UserNotFoundException(
-                        MessageFormat.format("User with id {0} not found!", taskRequest.getUserId())
-                )));
+                        MessageFormat.format(USER_NOT_FOUND, taskRequest.getUserId()))));
         var user = taskEntity.getUser();
         user.addTask(taskEntity);
         taskRepository.save(taskEntity);
-        eventPublisher.publishEvent(
-                new TaskCreateEvent(
-                        taskEntity.getId(),
-                        taskEntity.getTitle(),
-                        taskEntity.getDescription(),
-                        taskEntity.getStatus(),
-                        taskEntity.getUser()
-                                .getUsername()));
-
-        log.info("Task: {} is saved",taskEntity);
-
-        try {
-            var key = String.valueOf(taskEntity.getId());
-            var value = objectMapper.writeValueAsString(taskEntity);
-            redisTemplate.opsForValue().set(key, value);
-            redisTemplate.expire(String.valueOf(String.valueOf(taskEntity.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
-            return taskEntity;
-        }catch (JsonProcessingException e){
-            log.error("Error writing value in redis: {}",e.getLocalizedMessage());
-            return null;
-        }
+        var event = createEvent(taskEntity);
+        eventPublisher.publishEvent(event);
+        writeToRedis(taskEntity);
+        rabbitTemplate.convertAndSend(queueName,event);
+        log.info("Event: {} is saved",event);
+        return taskEntity;
     }
-
-    @Override
-    public Map<String,List<UserEntity>> setUsersForTask(List<Long> userIds, Long taskId) {
-         TaskEntity task =  taskRepository.findById(taskId)
-                .orElseThrow(()->new TaskNotFoundException(MessageFormat.format("Задача с идентификатором {} не найдена", taskId)));
-
-         List<UserEntity> users = userRepository.findAllById(userIds);
-         taskRepository.save(task);
-         userRepository.saveAll(users);
-         log.info("Task created! {}", task);
-         return Map.of(task.getTitle(),users);
-    }
-
-
 
 
     @Override
     public TaskResponse findByTitle(String title) {
         return taskMapper.toDto(taskRepository.findByTitle(title)
                 .orElseThrow(()->new TaskNotFoundException(
-                        MessageFormat.format("Task with title {0} not found",title)
-                )));
+                        MessageFormat.format(TASK_WITH_TITLE_NOT_FOUND,title))));
     }
 
     @Override
@@ -169,48 +139,27 @@ public class TaskServiceImpl implements TaskService {
                        Long userId) {
         var task = taskRepository.findById(id)
                         .orElseThrow(()->new TaskNotFoundException(
-                                MessageFormat.format("Task with id: {0} not found",id)));
+                                MessageFormat.format(TASK_WITH_ID_NOT_FOUND,id)));
+        var user = userRepository.findById(userId)
+                        .orElseThrow(()->new UserNotFoundException(
+                                MessageFormat.format(USER_NOT_FOUND, userId)));
 
-        task.setUser(userRepository.findById(userId).orElseThrow(()->new UserNotFoundException(
-                MessageFormat.format("User with id {0} not found!", userId))));
+        task.setUser(user);
         boolean isValidStatus = validStatus(status);
         if (isValidStatus) {
             task.setStatus(status.trim().toUpperCase());
             taskRepository.save(task);
             task.setUpdatedAt(LocalDateTime.now());
-            eventPublisher.publishEvent(
-                    new TaskUpdatedEvent(
-                            task.getId(),
-                            task.getTitle(),
-                            task.getDescription(),
-                            task.getStatus(),
-                            task.getUpdatedAt(),
-                            task.getUser().getUsername()));
-            try {
-                var key = String.valueOf(task.getId());
-                var value = objectMapper.writeValueAsString(task);
-                redisTemplate.opsForValue().set(key, value);
-                redisTemplate.expire(String.valueOf(String.valueOf(task.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
-            }catch (JsonProcessingException e){
-                log.error("Не удалось записать значение в Redis: {}",e.getLocalizedMessage());
-            }
-        }else {
+            var event = createEvent(task);
+            eventPublisher.publishEvent(event);
+            writeToRedis(task);
+            rabbitTemplate.convertAndSend(queueName,event);
+        }
+        else {
             throw new RuntimeException("UNKNOWN STATUS");
         }
 
     }
-
-
-    private boolean validStatus(String status){
-        return status.equals(String.valueOf(TaskStatus.IN_PROGRESS)) ||
-                status.equals(String.valueOf(TaskStatus.COMPLETED)) ||
-                status.equals(String.valueOf(TaskStatus.FAILED));
-    }
-
-
-
-
-
 
     @Override
     public void deleteById(final Long id) {
@@ -218,16 +167,13 @@ public class TaskServiceImpl implements TaskService {
                 .ifPresentOrElse(taskEntity -> {
                     taskRepository.delete(taskEntity);
                     redisTemplate.opsForValue().getAndDelete(String.valueOf(id));
-                    eventPublisher.publishEvent(new TaskCreateEvent(
-                            taskEntity.getId(),
-                            taskEntity.getTitle(),
-                            taskEntity.getDescription(),
-                            taskEntity.getStatus(),
-                            taskEntity.getUser().getUsername()));
+                    var event = createEvent(taskEntity);
+                    eventPublisher.publishEvent(event);
+                    rabbitTemplate.convertAndSend(queueName,event);
                     log.info("Id of deleted task: {}", taskEntity.getId());
                 },()->{
                     throw new TaskNotFoundException(
-                            MessageFormat.format("Task with id: {0} not found",id));
+                            MessageFormat.format(TASK_WITH_ID_NOT_FOUND,id));
                 });
 
     }
@@ -240,6 +186,33 @@ public class TaskServiceImpl implements TaskService {
             log.info("Tasks for deleting task: {}", taskEntity.getId());
         });
 
+    }
+
+    private boolean validStatus(String status){
+        return status.equals(String.valueOf(TaskStatus.IN_PROGRESS)) ||
+                status.equals(String.valueOf(TaskStatus.COMPLETED)) ||
+                status.equals(String.valueOf(TaskStatus.EXPIRED));
+    }
+
+    private TaskCreateEvent createEvent(TaskEntity taskEntity){
+        return new TaskCreateEvent(
+                taskEntity.getId(),
+                taskEntity.getTitle(),
+                taskEntity.getDescription(),
+                taskEntity.getStatus(),
+                taskEntity.getUser().getUsername());
+    }
+
+    private void writeToRedis(TaskEntity taskEntity){
+        try {
+            var key = String.valueOf(taskEntity.getId());
+            var value = objectMapper.writeValueAsString(taskEntity);
+            redisTemplate.opsForValue().set(key, value);
+            redisTemplate.expire(String.valueOf(String.valueOf(taskEntity.getId())),ttl.toMinutes(),TimeUnit.MINUTES);
+        }  catch (JsonProcessingException | AmqpException e ){
+            log.error("Error writing value in redis: {}",e.getLocalizedMessage());
+            throw new RuntimeException();
+        }
     }
 
 

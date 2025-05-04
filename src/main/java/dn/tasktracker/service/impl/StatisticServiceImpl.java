@@ -35,7 +35,7 @@ public class StatisticServiceImpl implements StatisticService {
         Map<String, List<TaskEntity>> userMap = Map.of(user.getUsername(), user.getTasks());
         long countOfFailedTasks = user.getTasks()
                 .stream()
-                .filter(task -> task.getStatus().equals(String.valueOf(TaskStatus.FAILED)))
+                .filter(task -> task.getStatus().equals(String.valueOf(TaskStatus.EXPIRED)))
                 .count();
         if (countOfFailedTasks > 5) {
             userService.banAccount(userId);

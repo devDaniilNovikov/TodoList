@@ -7,14 +7,28 @@ import dn.tasktracker.service.ExportService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -22,52 +36,52 @@ import java.util.List;
 public  class ExportServiceImpl implements ExportService {
 
     private final TaskRepository taskRepository;
+    private final RestClient restClient;
 
 
     @Override
     @SneakyThrows
-    public void exportToExcelFile(String filePath) {
-
+    public Resource exportToExcelFile() {
         List<TaskEntity> tasks = taskRepository.findAll();
+        String[] headers = {"ID", "Название", "Описание", "Статус", "Дата создания", "Пользователь"};
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String filename = "tasks_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm")) + ".xlsx";
+        String filePath = System.getProperty("user.home") + "/" + filename;
 
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Задачи");
             CellStyle headerStyle = getCellStyle(workbook);
+
             Row headerRow = sheet.createRow(0);
-            createHeaderCell(headerRow, 0, "ID", headerStyle);
-            createHeaderCell(headerRow, 1, "Название", headerStyle);
-            createHeaderCell(headerRow, 2, "Описание", headerStyle);
-            createHeaderCell(headerRow, 3, "Статус", headerStyle);
-            createHeaderCell(headerRow, 4, "Дата создания", headerStyle);
-            createHeaderCell(headerRow, 5, "Пользователь", headerStyle);
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            for (int i = 0; i < headers.length; i++) {
+                createHeaderCell(headerRow, i, headers[i], headerStyle);
+            }
 
             int rowNum = 1;
-            for (TaskEntity task : tasks){
+            for (TaskEntity task : tasks) {
                 Row row = sheet.createRow(rowNum++);
                 row.createCell(0).setCellValue(task.getId());
                 row.createCell(1).setCellValue(task.getTitle());
                 row.createCell(2).setCellValue(task.getDescription());
                 row.createCell(3).setCellValue(task.getStatus());
-                row.createCell(4).setCellValue(task.getCreatedAt()
-                        .format(formatter)
-                );
+                row.createCell(4).setCellValue(task.getCreatedAt().format(formatter));
                 row.createCell(5).setCellValue(task.getUser().getUsername());
             }
 
-        for (int i = 0; i < 6; i++) {
-            sheet.autoSizeColumn(i);
-        }
-        try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
-            workbook.write(outputStream);
-        }
-        log.info("Задачи выгружены в файл: {}", filePath);
-        } catch (IOException e) {
-            log.error("Ошибка при выгрузке задач в файл: {}", e.getMessage());
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            try (FileOutputStream fileOutputStream = new FileOutputStream(filePath)) {
+                workbook.write(fileOutputStream);
+                log.info("Задачи выгружены в файл: {}", filePath);
+            }
+            return new ByteArrayResource(Files.readAllBytes(Paths.get(filePath)));
+            } catch (IOException e) {
+            log.error("Ошибка при экспорте задач: {}", e.getMessage());
+            throw new RuntimeException(e);
+            }
         }
 
-
-    }
 
 
     private CellStyle getCellStyle(Workbook workbook) {

@@ -23,8 +23,6 @@ import java.io.File;
 @EnableAspectJAutoProxy
 @EnableRabbit
 @EnableTransactionManagement
-@EnableIntegration
-@EnableIntegrationManagement
 @EnableRetry
 public class TaskTrackerApplication {
 

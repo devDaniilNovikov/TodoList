@@ -20,10 +20,14 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: tasktracker
   rabbitmq:
-    host: ${RABBITMQ_HOST}
-    port: ${RABBITMQ_PORT}
-    username: ${RABBITMQ_USERNAME}
-    password: ${RABBITMQ_PASSWORD}
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    template:
+      retry:
+        max-interval: 10000ms
+
 
 
   datasource:

@@ -2,10 +2,7 @@ package dn.tasktracker.configuration;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -16,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.integration.support.json.Jackson2JsonObjectMapper;
 
 
 @Slf4j
@@ -42,15 +38,16 @@ public class RabbitConfig {
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(new Jackson2JsonMessageConverter());
-        rabbitTemplate.setMandatory(true);
-
         rabbitTemplate.setReturnsCallback(returned -> {
             log.error("Сообщение не доставлено. Код ответа: {}, текст ответа: {}, обменник: {}, ключ маршрутизации: {}",
                     returned.getReplyCode(), returned.getReplyText(), returned.getExchange(), returned.getRoutingKey());
         });
+        rabbitTemplate.setMessageConverter(new Jackson2JsonMessageConverter());
+        rabbitTemplate.setObservationEnabled(true);
         return rabbitTemplate;
     }
+
+
 
     @Bean
     public Queue queue() {

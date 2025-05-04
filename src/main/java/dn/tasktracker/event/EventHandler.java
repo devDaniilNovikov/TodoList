@@ -6,8 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,7 +37,7 @@ public class EventHandler {
     }
 
     @EventListener
-    public void handle(UserCreateEvent userCreateEvent) {
+    public void handle(final UserCreateEvent userCreateEvent) {
         log.info("New Event! User is created: {}", userCreateEvent.toString());
     }
 

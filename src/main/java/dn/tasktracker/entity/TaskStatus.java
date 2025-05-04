@@ -2,5 +2,5 @@ package dn.tasktracker.entity;
 
 public enum TaskStatus {
 
-    IN_PROGRESS,COMPLETED,FAILED
+    NEW,IN_PROGRESS,COMPLETED,EXPIRED
 }

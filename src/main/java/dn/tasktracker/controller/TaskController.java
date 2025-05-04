@@ -108,14 +108,15 @@ public class TaskController {
     @SneakyThrows
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<Resource> exportTask(){
-        String filename = "tasks_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm")) + ".xlsx";
-        String filePath = System.getProperty("java.io.tmpdir") + "/" + filename;
-        exportService.exportToExcelFile(filePath);
-        ByteArrayResource byteArrayResource = new ByteArrayResource(Files.readAllBytes(Paths.get(filePath)));
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=" + filename)
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(byteArrayResource);
+//        String filename = "tasks_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm")) + ".xlsx";
+//        String filePath = System.getProperty("java.io.tmpdir") + "/" + filename;
+//        exportService.exportToExcelFile(filePath);
+//        ByteArrayResource byteArrayResource = new ByteArrayResource(Files.readAllBytes(Paths.get(filePath)));
+//        return ResponseEntity.ok()
+//                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=" + filename)
+//                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+//                .body(byteArrayResource);
+        return null;
     }
 
 

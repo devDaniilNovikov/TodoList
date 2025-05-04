@@ -79,7 +79,7 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
                 .filter(TaskEntity::isExpired)
                 .peek(task -> {
                     task.setCompletedAt(false);
-                    task.setStatus(String.valueOf(TaskStatus.FAILED));
+                    task.setStatus(String.valueOf(TaskStatus.EXPIRED));
                     var key = String.valueOf(task.getId());
                     var value = String.valueOf(task);
                     redisTemplate.opsForValue().set(key, value, cacheTtl);
@@ -91,7 +91,7 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
         var requiredTasks = taskRepository.findAllById(taskExpiredList);
         Map<String, List<TaskEntity>> taskMap = taskRepository.findAll()
                 .stream()
-                .filter(task -> TaskStatus.FAILED.name().equals(task.getStatus()))
+                .filter(task -> TaskStatus.EXPIRED.name().equals(task.getStatus()))
                 .collect(Collectors.groupingBy(task -> String.valueOf(task.getUser().getId())));
         log.info("Task Map: {}", taskMap);
         taskMap.keySet()

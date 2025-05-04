@@ -22,8 +22,6 @@ public interface TaskService {
 
     TaskEntity save(TaskRequest taskRequest);
 
-    Map<String,List<UserEntity>> setUsersForTask(List<Long> userIds, Long taskId);
-
     TaskResponse findByTitle(String title);
 
     void update(Long id,String status,Long userId);

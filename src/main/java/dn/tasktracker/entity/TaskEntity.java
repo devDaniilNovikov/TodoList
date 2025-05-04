@@ -61,8 +61,6 @@ public class TaskEntity implements Serializable {
     @OneToMany(mappedBy = "tasks",cascade = CascadeType.ALL)
     private Set<Event> events = new HashSet<>();
 
-
-
     public boolean isExpired(){
         return ChronoUnit.MINUTES
                 .between(this.createdAt,
