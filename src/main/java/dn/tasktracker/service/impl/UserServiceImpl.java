@@ -1,10 +1,13 @@
 package dn.tasktracker.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dn.tasktracker.dto.user.ListUserResponse;
 import dn.tasktracker.dto.user.UserCreateRequest;
 import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.entity.UserStatus;
+import dn.tasktracker.event.UserCreateEvent;
+import dn.tasktracker.exception.UserAlreadyExistsException;
 import dn.tasktracker.exception.UserNotFoundException;
 import dn.tasktracker.mapper.UserMapper;
 import dn.tasktracker.repository.TaskRepository;
@@ -12,14 +15,20 @@ import dn.tasktracker.repository.UserRepository;
 import dn.tasktracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.formula.functions.T;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.TimeToLive;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
@@ -31,7 +40,12 @@ public class UserServiceImpl implements UserService {
     private final TaskRepository taskRepository;
     private final UserMapper userMapper;
     private final RedisTemplate<String, Object> redisTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ApplicationEventPublisher eventPublisher;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final String USER_BY_ID_NOT_FOUND = "User with id {0} not found!";
+    private static final String USER_BY_USERNAME_NOT_FOUND = "User with id {0} not found!";
+    private static final String USER_BY_PHONE_NOT_FOUND = "User with id {0} not found!";
+    private static final String TOPIC_NAME = "TaskTracker";
 
 
     @Override
@@ -39,44 +53,9 @@ public class UserServiceImpl implements UserService {
         return  userRepository.findAllById(ids)
                 .stream()
                 .map(userMapper::toDto)
+                .filter(Objects::nonNull)
                 .toList();
     }
-
-//        if (ids.isEmpty()){
-//            return Collections.emptyList();
-//        }
-//        List<UserEntity> users = userRepository.findAllById(
-//                 ids.stream()
-//                .filter(Objects::nonNull)
-//                .distinct()
-//                .toList());
-//        try {
-//            List<Long> userIds = users.stream()
-//                    .map(UserEntity::getId)
-//                    .toList();
-//            List<UserResponseForRedis> userResponseForRedis = users.stream()
-//                    .map(this::mapToRedisDto)
-//                    .flatMap(Collection::stream)
-//                    .toList();
-//            var valueToRedis = objectMapper.writeValueAsString(userResponseForRedis);
-//            redisTemplate.opsForValue().set(String.valueOf(userIds),valueToRedis);
-//            return userMapper.toDtoList(users);
-//        }catch (JsonProcessingException e){
-//            throw new RuntimeException(e);
-//         }
-//
-//    }
-
-//    private  List<UserResponseForRedis> mapToRedisDto(UserEntity user){
-//        UserResponseForRedis userResponseForRedis = new UserResponseForRedis();
-//        userResponseForRedis.setId(user.getId());
-//        userResponseForRedis.setUsername(user.getUsername());
-//        userResponseForRedis.setPhoneNumber(user.getPhoneNumber());
-//        userResponseForRedis.setStatus(user.getStatus());
-//        userResponseForRedis.setCreatedAt(String.valueOf(user.getCreatedAt()));
-//        userResponseForRedis.setUpdatedAt(String.valueOf(user.getUpdatedAt()));
-//        return List.of(userResponseForRedis);
-//    }
 
 
     @Override
@@ -86,6 +65,14 @@ public class UserServiceImpl implements UserService {
                         pageable.getPageSize())).getContent();
     }
 
+    @Override
+    public ListUserResponse findAllWithPagination(Pageable pageable) {
+        var userEntities = userRepository.findAll(
+                PageRequest.of(pageable.getPageNumber(),
+                        pageable.getPageSize())).getContent();
+        var count = (long) userEntities.size();
+        return new ListUserResponse(userEntities, (int) count);
+    }
 
 
     @Override
@@ -93,40 +80,43 @@ public class UserServiceImpl implements UserService {
     public UserResponse createAccount(UserCreateRequest userCreateRequest) {
         UserEntity user = new UserEntity();
         user.setUsername(userCreateRequest.getUsername());
+        if (userRepository.existsByUsername(userCreateRequest.getUsername())){
+            throw new UserAlreadyExistsException("Пользователь с таким именем уже существует");
+        }
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         user.setPassword(userCreateRequest.getPassword());
         user.setPhoneNumber(userCreateRequest.getPhoneNumber());
         user.setStatus(String.valueOf(UserStatus.ACTIVE));
+        user.setEmail(userCreateRequest.getEmail());
         userRepository.save(user);
-
+        var event = new UserCreateEvent(
+                user.getUsername(),
+                user.getStatus(),
+                user.getCreatedAt().format(formatter));
+        eventPublisher.publishEvent(event);
         return userMapper.toDto(user);
     }
 
     @Override
     public UserResponse getById(Long userId) {
-        log.info("Search of user with id: {}...",userId);
         return userMapper.toDto(userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException(
-                        MessageFormat.format("User with id {0} not found!", userId)
-                )));
+                        MessageFormat.format(USER_BY_ID_NOT_FOUND, userId))));
     }
 
     @Override
     public UserResponse getByUsername(String username) {
         return userMapper.toDto(userRepository.getByUsername(username)
                 .orElseThrow(()->new UserNotFoundException(
-                        MessageFormat.format("User with username {0} not found!", username)
-                ))
-        );
+                        MessageFormat.format(USER_BY_USERNAME_NOT_FOUND, username))));
     }
 
     @Override
     public UserResponse getByPhoneNumber(String phoneNumber) {
         return userMapper.toDto(userRepository.getByPhoneNumber(phoneNumber)
                 .orElseThrow(()->new UserNotFoundException(
-                        MessageFormat.format("User with phone number {0} not found!", phoneNumber)
-                )));
+                        MessageFormat.format(USER_BY_PHONE_NOT_FOUND, phoneNumber))));
     }
 
 
@@ -136,8 +126,7 @@ public class UserServiceImpl implements UserService {
     public void banAccount(Long userId) {
         UserEntity user = userRepository.findById(userId)
                         .orElseThrow(()->new UserNotFoundException(
-                                MessageFormat.format("User with id {0} not found!", userId)
-                        ));
+                                MessageFormat.format(USER_BY_ID_NOT_FOUND, userId)));
         user.setStatus(String.valueOf(UserStatus.BANNED));
         userRepository.save(user);
         log.info("User {} is get ban! Actual status: {}",userId, user.getStatus());
@@ -148,7 +137,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteAccount(Long userId) {
        UserEntity user = userMapper.toEntity(getById(userId));
-       List<Long> taskIds = user.getTasks().stream()
+       List<Long> taskIds = user.getTasks()
+               .stream()
                .map(TaskEntity::getId)
                .filter(Objects::nonNull)
                .distinct()
@@ -175,27 +165,17 @@ public class UserServiceImpl implements UserService {
         log.info("Пароль пользователя {} изменен.", user.getUsername());
     }
 
+
     @Override
-    public UserResponse setTasks(List<Long> taskIds, Long userId) {
-        UserEntity user = userMapper.toEntity(getById(userId));
-        Map<String,List<TaskEntity>> taskMap = new HashMap<>();
-        var tasks = taskRepository.findAllById(taskIds)
-                .stream()
-                .filter(task -> !task.getUser().getId().equals(userId))
-                .toList();
-        user.setTasks(tasks);
-        taskMap.put(String.valueOf(userId),user.getTasks());
-        
-        log.info("TaskMap is: {}",taskMap);
+    @Transactional
+    public void changeEmailForUser(String email, Long userId) {
+        var user = userRepository.findById(userId)
+                .orElseThrow(()->new UserNotFoundException(
+                        MessageFormat.format(USER_BY_ID_NOT_FOUND, userId)));
+        user.setEmail(email);
         userRepository.save(user);
-        taskRepository.saveAll(tasks);
-        log.info("Для пользователя {} добавлены задачи: {}",
-                user.getUsername(),
-                tasks.toArray());
-        return userMapper.toDto(user);
-
+        log.info("User  {} email is changed to {}", user.getUsername(), email);
     }
-
 
 
 }

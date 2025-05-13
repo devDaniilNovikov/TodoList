@@ -13,14 +13,9 @@
         <module name="TaskTracker.main" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="21" />
   </component>
   <component name="JavacSettings">
-    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="TaskTracker" options="-parameters" />
-      <module name="TaskTracker.aot" options="-parameters" />
-      <module name="TaskTracker.aotTest" options="-parameters" />
-      <module name="TaskTracker.main" options="-parameters" />
-      <module name="TaskTracker.test" options="-parameters" />
-    </option>
+    <option name="ADDITIONAL_OPTIONS_STRING" value="-parameters" />
   </component>
 </project>

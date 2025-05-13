@@ -1,6 +1,7 @@
 package dn.tasktracker.dto.user;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import dn.tasktracker.dto.TaskResponse;
 import dn.tasktracker.entity.TaskEntity;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -27,7 +28,7 @@ public class UserResponse {
     private LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
     private LocalDateTime updatedAt;
-    private List<TaskEntity> tasks;
+    private List<TaskResponse> tasks;
     private String status;
     private String phoneNumber;
 

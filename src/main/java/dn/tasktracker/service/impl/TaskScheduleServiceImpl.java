@@ -32,8 +32,6 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
 
     private final TaskRepository taskRepository;
     private final RedisTemplate<String, Object> redisTemplate;
-
-    private static final String FAILED = "FAILED";
     private static final Duration cacheTtl = Duration.ofMinutes(10);
 
 
@@ -43,7 +41,7 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
     public void checkTaskStatus() {
         List<TaskEntity> tasksForDelete = taskRepository.findAll()
                 .stream()
-                .filter(task -> task.getStatus().equals(FAILED.trim()))
+                .filter(task -> task.getStatus().equals(String.valueOf(TaskStatus.EXPIRED).trim()))
                 .filter(TaskEntity::isExpired)
                 .toList();
         List<Long> taskIds = tasksForDelete.stream()
@@ -54,7 +52,6 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
                 .toList();
         log.info("Ids of tasks for delete : {} ", Arrays.toString(taskIds.toArray()));
         redisTemplate.delete(String.valueOf(taskIds));
-
         log.info("List of tasks for delete: {}", Arrays.toString(tasksForDelete.toArray()));
         taskRepository.deleteAllInBatch(tasksForDelete);
         log.info("Tasks for delete: {}", taskIds.toArray());
@@ -62,10 +59,10 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
     }
 
 
-    @Scheduled(cron = "0 * */12 * * ?")
+    @Scheduled(cron = "* * 18 * * ?")
     public void cleanCache() {
         redisTemplate.delete(redisTemplate.keys("*"));
-        log.info("Cache is cleaned");
+        log.info("Кэш очищен");
 
     }
 

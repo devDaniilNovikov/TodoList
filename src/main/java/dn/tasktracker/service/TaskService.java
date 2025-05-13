@@ -1,9 +1,6 @@
 package dn.tasktracker.service;
 
-import dn.tasktracker.dto.ListTaskResponse;
-import dn.tasktracker.dto.TaskRequest;
-import dn.tasktracker.dto.TaskResponse;
-import dn.tasktracker.dto.TaskSortDto;
+import dn.tasktracker.dto.*;
 import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;

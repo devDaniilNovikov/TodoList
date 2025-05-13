@@ -15,4 +15,6 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
 
     Optional<TaskEntity> findByTitle(String title);
 
+    boolean existsByTitle(String title);
+
 }

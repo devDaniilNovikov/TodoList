@@ -1,9 +1,15 @@
 package dn.tasktracker.controller;
 
+import dn.tasktracker.dto.user.ListUserResponse;
 import dn.tasktracker.dto.user.UserCreateRequest;
 import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,31 +20,64 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "User",description = "Действия с аккаунтом пользователя")
 public class UserController {
 
     private static final String CREATE_ACCOUNT = "/api/v1/account/create";
-    public static final String GET_ALL_USERS = "/api/v1/users";
+    private static final String GET_ALL_USERS = "/api/v1/accounts/all";
     private static final String GET_ACCOUNT_BY_ID = "/api/v1/account/{id}";
     private static final String BAN_ACCOUNT = "/api/v1/account/ban";
     private static final String GET_USERS_BY_IDS = "/api/v1/search/accounts/";
-    public static final String CHANGE_CREDENTIALS = "/api/v1/{id}/account/change/password";
-    public static final String ADD_TASKS_FOR_USER = "/api/v1/{id}/account/add/tasks";
+    private static final String CHANGE_CREDENTIALS = "/api/v1/{id}/account/change/password";
+    private static final String CHANGE_EMAIL = "/api/v1/{id}/account/change/email";
+    private static final String ACCOUNTS_LIST = "/api/v1/accounts/page";
     private final UserService userService;
 
+    @GetMapping(ACCOUNTS_LIST)
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Получение списка пользователей постгранично v1")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Список пользователей получен"),
+            @ApiResponse(responseCode = "404",description = "Пользователи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
+    public ListUserResponse listUserResponse(@RequestParam  int pageNumber,
+                                             @RequestParam  int pageSize) {
+        return userService.findAllWithPagination(PageRequest.of(pageNumber, pageSize));
+    }
+
     @PostMapping(CREATE_ACCOUNT)
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public UserResponse createAccount(@RequestBody UserCreateRequest userCreateRequest) {
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(description = "Создание пользователя")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Пользователь создан"),
+            @ApiResponse(responseCode = "400",description = "Пользователь не создан, некорректные данные"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
+    public UserResponse createAccount(@RequestBody @Valid UserCreateRequest userCreateRequest) {
         return userService.createAccount(userCreateRequest);
     }
 
     @GetMapping(GET_USERS_BY_IDS)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Получение списка пользователей по их уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Список пользователей получен"),
+            @ApiResponse(responseCode = "404",description = "Пользователи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public List<UserResponse> getUsersByIds(@RequestParam List<Long> ids){
         return userService.findAllByIds(ids);
     }
 
     @GetMapping(GET_ALL_USERS)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Получение списка пользователей постгранично v2")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Пользователи получены"),
+            @ApiResponse(responseCode = "404",description = "Пользователи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public List<UserEntity> getUsers(@RequestParam(defaultValue = "0") int pageNumber,
                                      @RequestParam(defaultValue = "10") int pageSize) {
         return userService.findAll(PageRequest.of(pageNumber, pageSize));
@@ -46,12 +85,25 @@ public class UserController {
 
     @GetMapping(GET_ACCOUNT_BY_ID)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Получение пользователя по его уникальному идентификатору ")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Пользователь получен"),
+            @ApiResponse(responseCode = "404",description = "Пользователь не найден"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public UserResponse getAccountById(@PathVariable Long id){
         return userService.getById(id);
     }
 
     @PatchMapping(CHANGE_CREDENTIALS)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Изменение пароля пользователя по его уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Пароль пользователя изменен"),
+            @ApiResponse(responseCode = "400",description = "Некорректные данные"),
+            @ApiResponse(responseCode = "404",description = "Пользователь не найден"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public void changePassword(@PathVariable Long id,
                                @RequestParam String oldPassword,
                                @RequestParam String newPassword) {
@@ -61,13 +113,29 @@ public class UserController {
 
     @PostMapping(BAN_ACCOUNT)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Бан пользователя по его уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Пользователь забанен"),
+            @ApiResponse(responseCode = "400",description = "Некорректные данные"),
+            @ApiResponse(responseCode = "404",description = "Пользователь не найден"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public void banAccount(@RequestParam Long id){
         userService.banAccount(id);
     }
 
-    @PostMapping(ADD_TASKS_FOR_USER)
-    public UserResponse addTasksForUser(@PathVariable Long id,
-                                @RequestParam List<Long> taskIds){
-        return userService.setTasks(taskIds,id);
+
+    @PatchMapping(CHANGE_EMAIL)
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(description = "Измнение почты пользователя по его уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Почта пользователя изменена"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные"),
+            @ApiResponse(responseCode = "404", description = "Пользователь не найдены"),
+            @ApiResponse(responseCode = "500", description = "Неизвестная ошибка сервера")
+    })
+    public void changeEmail(@PathVariable Long id,
+                            @RequestParam String email){
+        userService.changeEmailForUser(email,id);
     }
 }

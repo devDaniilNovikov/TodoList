@@ -4,6 +4,7 @@ package dn.tasktracker.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -23,12 +24,10 @@ import java.util.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class TaskEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @SequenceGenerator(name = "task_id_seq", sequenceName = "task_id_seq",schema = "tasktracker",allocationSize = 1)
     private Long id;
 
     @Column(nullable = false,unique = true)
@@ -49,8 +48,7 @@ public class TaskEntity implements Serializable {
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")
     private LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY,cascade = {
-    CascadeType.MERGE})
+    @ManyToOne(fetch = FetchType.LAZY,cascade = {CascadeType.MERGE,CascadeType.PERSIST})
     @JoinColumn(name = "user_id",nullable = false)
     @JsonBackReference
     private UserEntity user;
@@ -65,10 +63,6 @@ public class TaskEntity implements Serializable {
         return ChronoUnit.MINUTES
                 .between(this.createdAt,
                         LocalDateTime.now()) >1;
-    }
-
-    public boolean isFailed() {
-        return status.equals("FAILED");
     }
 
     @Override

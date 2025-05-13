@@ -12,20 +12,16 @@ import org.mapstruct.ReportingPolicy;
 import java.util.List;
 
 @Mapper(componentModel = "spring",unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface TaskMapper {
+public interface TaskMapper extends Mappable<TaskEntity, TaskResponse> {
 
-    TaskEntity toEntity(TaskResponse dto);
 
     @Mapping(source = "user.username", target = "workerName")
+    @Override
     TaskResponse toDto(TaskEntity taskEntity);
 
-    List<TaskEntity> toEntityList(List<TaskResponse> dtoList);
-
-    List<TaskResponse> toDtoList(List<TaskEntity> entityList);
-
-    default ListTaskResponse mapToResponseList(List<TaskEntity> taskEntities){
+    default ListTaskResponse toListDto(List<TaskEntity> taskEntity) {
         ListTaskResponse listTaskResponse = new ListTaskResponse();
-        listTaskResponse.setTasks(taskEntities.stream()
+        listTaskResponse.setTasks(taskEntity.stream()
                 .map(this::toDto)
                 .toList());
         return listTaskResponse;

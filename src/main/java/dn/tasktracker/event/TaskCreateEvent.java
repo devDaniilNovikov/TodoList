@@ -7,7 +7,7 @@ public record TaskCreateEvent(
         String title,
         String description,
         String status,
-        String worker){
+        String workerName){
 
 
 }

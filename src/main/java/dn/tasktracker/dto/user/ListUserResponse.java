@@ -1,6 +1,7 @@
 package dn.tasktracker.dto.user;
 
 
+import dn.tasktracker.entity.UserEntity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,9 +14,9 @@ import java.util.List;
 @NoArgsConstructor
 public class ListUserResponse {
 
-    private Page<UserResponse> users;
+    private Page<UserEntity> users;
 
-    public ListUserResponse(List<UserResponse> userResponses,int totalElements){
+    public ListUserResponse(List<UserEntity> userResponses,int totalElements){
         this.users = new PageImpl<>(new ArrayList<>(userResponses));
     }
 }

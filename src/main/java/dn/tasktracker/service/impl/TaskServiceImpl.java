@@ -1,12 +1,11 @@
 package dn.tasktracker.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dn.tasktracker.dto.ListTaskResponse;
-import dn.tasktracker.dto.TaskRequest;
-import dn.tasktracker.dto.TaskResponse;
-import dn.tasktracker.dto.TaskSortDto;
+import dn.tasktracker.aop.Loggable;
+import dn.tasktracker.dto.*;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.TaskStatus;
+import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.event.TaskCreateEvent;
 import dn.tasktracker.exception.TaskNotFoundException;
 import dn.tasktracker.exception.UserNotFoundException;
@@ -14,6 +13,7 @@ import dn.tasktracker.mapper.TaskMapper;
 import dn.tasktracker.repository.TaskRepository;
 import dn.tasktracker.repository.TaskSpecification;
 import dn.tasktracker.repository.UserRepository;
+import dn.tasktracker.service.EmailService;
 import dn.tasktracker.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +24,11 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -46,26 +48,22 @@ public class TaskServiceImpl implements TaskService {
     private final RedisTemplate<String,Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
-    private final RabbitTemplate rabbitTemplate;
+    private final EmailService emailService;
+    private static final String TASK_TITLE = "TASK";
 
-    private static final String USER_NOT_FOUND = "User with id {0} not found!";
-    private static final String TASK_WITH_ID_NOT_FOUND = "Task with id: {0} not found";
-    private static final String TASK_WITH_TITLE_NOT_FOUND  = "Task with title: {0} not found";
 
 
     @Value("${app.cache.caches.taskAfterCreate.ttl}")
     private Duration ttl;
     @Value("${spring.cache.cache-names}")
     private List<String> cacheNames;
-    @Value("${messaging.queue.name}")
-    private String queueName;
 
 
 
 
     @Override
     public ListTaskResponse getAll(TaskSortDto taskDto) {
-        return taskMapper.mapToResponseList(taskRepository.findAll(
+        return taskMapper.toListDto(taskRepository.findAll(
                 TaskSpecification.withFilter(taskDto),
                 PageRequest.of(taskDto.getPageNumber(), taskDto.getPageSize()))
                 .getContent()
@@ -78,7 +76,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public ListTaskResponse getAll() {
-        return taskMapper.mapToResponseList(taskRepository.findAll()
+        return taskMapper.toListDto(taskRepository.findAll()
                 .stream()
                 .peek(tasks->{
                     redisTemplate.opsForList().leftPush(cacheNames.get(3), tasks.toString());
@@ -87,24 +85,28 @@ public class TaskServiceImpl implements TaskService {
     }
 
 
+
     @Override
     public TaskResponse getById(final Long id) {
         return taskMapper.toDto(taskRepository.findById(id)
                         .stream()
                         .peek(task->{
-                            redisTemplate.opsForValue().set(String.valueOf(id), task.toString(), ttl);
+                            redisTemplate.opsForValue()
+                                    .set(String.valueOf(id), task.toString(), ttl);
                         }).findAny()
                           .orElseThrow(()->new TaskNotFoundException(
-                          MessageFormat.format(TASK_WITH_ID_NOT_FOUND,id)
+                          MessageFormat.format("Task with id: {0} not found",id)
                         )));}
 
 
 
     @Override
     @Transactional
+    @Loggable
     public TaskEntity save(TaskRequest taskRequest) {
         TaskEntity taskEntity = new TaskEntity();
-        taskEntity.setTitle(taskRequest.getTitle().trim());
+        var taskTitleNumber = String.valueOf(new SecureRandom().nextInt(1000));
+        taskEntity.setTitle(TASK_TITLE + taskTitleNumber);
         taskEntity.setDescription(taskRequest.getDescription());
         taskEntity.setStatus(String.valueOf(TaskStatus.IN_PROGRESS));
         taskEntity.setCreatedAt(LocalDateTime.now());
@@ -112,14 +114,20 @@ public class TaskServiceImpl implements TaskService {
         taskEntity.setCompletedAt(false);
         taskEntity.setUser(userRepository.findById(taskRequest.getUserId())
                 .orElseThrow(() -> new UserNotFoundException(
-                        MessageFormat.format(USER_NOT_FOUND, taskRequest.getUserId()))));
+                        MessageFormat.format(
+                                "User with id {0} not found!", taskRequest.getUserId()))));
         var user = taskEntity.getUser();
         user.addTask(taskEntity);
         taskRepository.save(taskEntity);
         var event = createEvent(taskEntity);
         eventPublisher.publishEvent(event);
         writeToRedis(taskEntity);
-        rabbitTemplate.convertAndSend(queueName,event);
+        var mails = userRepository.findAll()
+                .stream()
+                .map(UserEntity::getEmail)
+                .filter(Objects::nonNull)
+                .toList();
+        emailService.sendEmail(String.valueOf(mails),user.getUsername(),event.toString());
         log.info("Event: {} is saved",event);
         return taskEntity;
     }
@@ -129,7 +137,7 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponse findByTitle(String title) {
         return taskMapper.toDto(taskRepository.findByTitle(title)
                 .orElseThrow(()->new TaskNotFoundException(
-                        MessageFormat.format(TASK_WITH_TITLE_NOT_FOUND,title))));
+                        MessageFormat.format("Task with title: {0} not found",title))));
     }
 
     @Override
@@ -139,10 +147,10 @@ public class TaskServiceImpl implements TaskService {
                        Long userId) {
         var task = taskRepository.findById(id)
                         .orElseThrow(()->new TaskNotFoundException(
-                                MessageFormat.format(TASK_WITH_ID_NOT_FOUND,id)));
+                                MessageFormat.format("Task with id: {0} not found",id)));
         var user = userRepository.findById(userId)
                         .orElseThrow(()->new UserNotFoundException(
-                                MessageFormat.format(USER_NOT_FOUND, userId)));
+                                MessageFormat.format("User with id {0} not found!", userId)));
 
         task.setUser(user);
         boolean isValidStatus = validStatus(status);
@@ -153,7 +161,6 @@ public class TaskServiceImpl implements TaskService {
             var event = createEvent(task);
             eventPublisher.publishEvent(event);
             writeToRedis(task);
-            rabbitTemplate.convertAndSend(queueName,event);
         }
         else {
             throw new RuntimeException("UNKNOWN STATUS");
@@ -169,11 +176,10 @@ public class TaskServiceImpl implements TaskService {
                     redisTemplate.opsForValue().getAndDelete(String.valueOf(id));
                     var event = createEvent(taskEntity);
                     eventPublisher.publishEvent(event);
-                    rabbitTemplate.convertAndSend(queueName,event);
                     log.info("Id of deleted task: {}", taskEntity.getId());
                 },()->{
                     throw new TaskNotFoundException(
-                            MessageFormat.format(TASK_WITH_ID_NOT_FOUND,id));
+                            MessageFormat.format("Task with id: {0} not found",id));
                 });
 
     }

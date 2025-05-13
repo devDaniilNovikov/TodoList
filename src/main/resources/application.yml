@@ -19,14 +19,27 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: tasktracker
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    template:
-      retry:
-        max-interval: 10000ms
+        format_sql: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: ${KAFKA_GROUP_ID}
+    topic:
+      name: ${KAFKA_TOPIC_NAME}
+
+  mail:
+    protocol: smtp
+    port: 587
+    host: ${MAIL_HOST}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    default-encoding: UTF-8
+  properties:
+      mail:
+        auth: true
+        starttls:
+            enable: true
+        debug: true
 
 
 
@@ -53,6 +66,7 @@ spring:
       enabled: true
 
 
+
 app:
   cache:
     cacheType: redis
@@ -74,6 +88,4 @@ logging:
     name: logs/application.log
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-messaging:
-  queue:
-    name: MailNotificationSendindQueue
+

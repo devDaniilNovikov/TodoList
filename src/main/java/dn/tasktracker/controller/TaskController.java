@@ -1,14 +1,15 @@
 package dn.tasktracker.controller;
-import dn.tasktracker.dto.ListTaskResponse;
-import dn.tasktracker.dto.TaskRequest;
-import dn.tasktracker.dto.TaskResponse;
-import dn.tasktracker.dto.TaskSortDto;
+import dn.tasktracker.dto.*;
 import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.service.ExportService;
 import dn.tasktracker.service.TaskService;
 import io.lettuce.core.SslOptions;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -30,6 +31,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "Task",description = "Действия с задачами")
 public class TaskController {
 
     private final TaskService taskService;
@@ -39,40 +41,47 @@ public class TaskController {
     private static final String GET_TASK_BY_ID = "/api/v1/task/{id}";
     private static final String GET_TASK_BY_TITLE = "/api/v1/task/";
     private static final String CREATE_TASK = "/api/v1/task/create";
-    private static final String UPDATE_TASK = "/api/v1/task/update/{id}";
     private static final String DELETE_TASK = "/api/v1/task/delete/{id}";
-    private static final String SET_TIME_FOR_TASK = "/api/v1/tasks/{id}/?";
-    private static final String ADD_USERS_FOR_TASK = "/api/v1/task/{id}/add-users";
     private static final String UPDATE_TASK_STATUS = "/api/v1/task/update/status/{id}";
     private static final String JSON_CONTENT_TYPE = "application/json";
-    public static final String DOWNLOAD_EXCEL_FILE = "/api/v1/task/excel/download";
+    private static final String DOWNLOAD_EXCEL_FILE = "/api/v1/task/excel/download";
     
 
 
 
-    @GetMapping(value = GET_ALL_TASKS,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
+    @GetMapping(value = GET_ALL_TASKS)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Получение списка всех задач")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Список всех задач получен"),
+            @ApiResponse(responseCode = "404",description = "Задачи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public ListTaskResponse findAll(){
         return taskService.getAll();
     }
 
-    @PostMapping(value = ADD_USERS_FOR_TASK,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
-    @ResponseStatus(HttpStatus.OK)
-    public Map<String,List<UserEntity>> addUsersForTask(@PathVariable Long id,
-                                @RequestParam List<Long> userIds){
-         return taskService.setUsersForTask(userIds,id);
-    }
-
-
 
     @GetMapping(value = GET_TASK_WITH_PAGINATION,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Получение списка задач постранично")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Задачи получены"),
+            @ApiResponse(responseCode = "404",description = "Задачи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public ListTaskResponse findAll(TaskSortDto taskDto){
         return taskService.getAll(taskDto);
     }
 
     @GetMapping(value = GET_TASK_BY_ID,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Получение задачи по уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Задача получена"),
+            @ApiResponse(responseCode = "404",description = "Задачи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public TaskResponse findById(@PathVariable Long id){
         return taskService.getById(id);
 
@@ -80,18 +89,37 @@ public class TaskController {
 
     @GetMapping(value = GET_TASK_BY_TITLE,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Получение задачи по заголовку")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Задача получена"),
+            @ApiResponse(responseCode = "404",description = "Задачи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public TaskResponse findByTitle(@RequestParam String title){
         return taskService.findByTitle(title);
     }
 
     @PostMapping(value = CREATE_TASK,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(description = "Создание задачи")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Задача создана"),
+            @ApiResponse(responseCode = "400",description = "Задача не создана, некорректные данные"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public TaskEntity createTask(@RequestBody TaskRequest taskRequest){
         return taskService.save(taskRequest);
     }
 
     @PatchMapping(value = UPDATE_TASK_STATUS)
     @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Обновление задачи по уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Задача получена"),
+            @ApiResponse(responseCode = "400",description = "Задача не обновлена, некорректные данные"),
+            @ApiResponse(responseCode = "404",description = "Задача не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public void updateTask(@PathVariable Long id,
                            @RequestParam String status,
                            @RequestParam Long userId){
@@ -100,6 +128,12 @@ public class TaskController {
 
     @DeleteMapping(DELETE_TASK)
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(description = "Удаление задачи по уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Задача удалена"),
+            @ApiResponse(responseCode = "404",description = "Задача не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
     public void deleteTask(@PathVariable Long id){
         taskService.deleteById(id);
     }

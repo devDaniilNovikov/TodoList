@@ -18,7 +18,7 @@ import org.springframework.data.redis.core.index.Indexed;
 })
 public class Event {
     @Id
-    private String id;
+    private Long id;
     private String name;
     private String description;
 

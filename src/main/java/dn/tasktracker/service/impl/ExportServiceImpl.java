@@ -33,14 +33,12 @@ import java.util.concurrent.CompletableFuture;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public  class ExportServiceImpl implements ExportService {
+public class ExportServiceImpl implements ExportService {
+
 
     private final TaskRepository taskRepository;
-    private final RestClient restClient;
-
 
     @Override
-    @SneakyThrows
     public Resource exportToExcelFile() {
         List<TaskEntity> tasks = taskRepository.findAll();
         String[] headers = {"ID", "Название", "Описание", "Статус", "Дата создания", "Пользователь"};

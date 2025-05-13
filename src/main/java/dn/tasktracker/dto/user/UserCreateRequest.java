@@ -21,6 +21,8 @@ public class UserCreateRequest {
     @Size(min = 8, max = 20, message = "Пароль должен быть не меньше 8 и не больше 20 символов")
     private String password;
 
+    @NotBlank(message = "Email не должен быть пустым")
+    private String email;
     @Nullable
     private String phoneNumber;
 

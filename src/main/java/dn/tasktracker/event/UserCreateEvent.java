@@ -1,5 +1,9 @@
 package dn.tasktracker.event;
 
-public record UserCreateEvent(String username,String status,String createdAt){
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+public record UserCreateEvent(String username,
+                              String status,
+                              String createdAt) {
 
 }

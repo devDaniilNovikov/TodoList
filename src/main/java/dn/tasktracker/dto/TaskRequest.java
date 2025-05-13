@@ -18,8 +18,6 @@ import java.util.List;
 @Builder
 public class TaskRequest implements Serializable {
     private Long id;
-    @NotNull(message = "title cannot be blank")
-    private String title;
     @NotNull(message = "description cannot be blank")
     private String description;
     @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd||HH:mm")

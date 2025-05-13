@@ -16,7 +16,7 @@ public interface UserService {
 
     List<UserEntity> findAll(Pageable pageable);
 
-
+    ListUserResponse findAllWithPagination(Pageable pageable);
 
     UserResponse createAccount(UserCreateRequest userCreateRequest);
 
@@ -32,7 +32,7 @@ public interface UserService {
 
     void changePassword(String oldPassword, String newPassword, Long userId);
 
-    UserResponse setTasks(List<Long> tasks, Long userId);
+    void changeEmailForUser(String email, Long userId);
 
 
 

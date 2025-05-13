@@ -13,21 +13,17 @@ import org.springframework.stereotype.Component;
 @EnableAspectJAutoProxy
 public class LoggingAspect {
 
-
-
-
-
-    @Before("execution(* dn.tasktracker.service.impl.*.*(..))")
+    @Before("@annotation(Loggable)")
     public void beforeTaskServiceMethods(JoinPoint joinPoint) {
         log.info("Метод: {} начинает свое выполнение!",joinPoint.getSignature().getName());
     }
 
-    @After("execution(* dn.tasktracker.service.impl.TaskServiceImpl.*(..))")
+    @After("@annotation(Loggable)")
     public void afterTaskServiceMethods(JoinPoint joinPoint) {
         log.info("Метод: {} завершил свое выполнение!", joinPoint.getSignature().getName());
     }
 
-    @Around("execution(* dn.tasktracker.service.impl.*.*(..))")
+    @Around("@annotation(Loggable)")
     public Object aroundTaskServiceMethods(ProceedingJoinPoint joinPoint) throws Throwable {
         long start = System.currentTimeMillis();
         Object result = joinPoint.proceed();
@@ -35,9 +31,9 @@ public class LoggingAspect {
         log.info("Метод: {} выполнился за {} мс",
                 joinPoint.getSignature().getName(),
                 executionTime);
-
         return result;
     }
+
 
 
 

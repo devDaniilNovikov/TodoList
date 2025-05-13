@@ -3,6 +3,7 @@ package dn.tasktracker.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -13,7 +14,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
-@Table(schema = "tasktracker", name = "users", indexes = @Index(name = "idx_users_username", columnList = "username"))
+@Table(schema = "tasktracker", name = "users",
+        indexes = @Index(name = "idx_users_username",
+                columnList = "username"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,30 +27,37 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false,length = 20)
+    @Column(unique = true, nullable = false,length = 20,name = "Имя пользователя")
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = false,name = "Пароль")
     private String password;
 
     @CreationTimestamp
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
+    @Column(name = "Дата создания")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
+    @Column(name = "Дата обновления")
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user",cascade = CascadeType.MERGE)
     @JsonBackReference
+    @Column(name = "Задачи")
     private List<TaskEntity> tasks = new ArrayList<>();
 
-    @Column(nullable = false)
+    @Column(nullable = false,name = "Статус пользователя")
     private String status;
 
     private String photoUrl;
 
+    @Column(nullable = false,unique = true,name = "Почта")
+    private String email;
+
     @OneToMany(mappedBy = "users",cascade = CascadeType.ALL)
+    @Column(name = "События")
     private Set<Event> events = new HashSet<>();
 
 
