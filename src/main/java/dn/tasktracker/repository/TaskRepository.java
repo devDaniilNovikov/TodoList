@@ -1,6 +1,7 @@
 package dn.tasktracker.repository;
 
 import dn.tasktracker.entity.TaskEntity;
+import dn.tasktracker.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -16,5 +17,7 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
     Optional<TaskEntity> findByTitle(String title);
 
     boolean existsByTitle(String title);
+
+
 
 }

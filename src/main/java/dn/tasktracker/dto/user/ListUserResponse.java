@@ -2,6 +2,7 @@ package dn.tasktracker.dto.user;
 
 
 import dn.tasktracker.entity.UserEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,11 +13,10 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
+@Schema(name = "ListUserResponse",description = "Список пользователей с применением пагинации")
 public class ListUserResponse {
 
-    private Page<UserEntity> users;
+    @Schema(name = "users",description = "Список пользователей")
+    private List<UserResponse> users = new ArrayList<>();
 
-    public ListUserResponse(List<UserEntity> userResponses,int totalElements){
-        this.users = new PageImpl<>(new ArrayList<>(userResponses));
-    }
 }

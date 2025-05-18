@@ -3,6 +3,7 @@ package dn.tasktracker.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
@@ -53,10 +54,12 @@ public class TaskEntity implements Serializable {
     @JsonBackReference
     private UserEntity user;
 
-    @OneToMany(mappedBy = "tasks")
+    @OneToMany(mappedBy = "tasks",fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<SubTaskEntity> subTasks = new ArrayList<>();
 
-    @OneToMany(mappedBy = "tasks",cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "tasks",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<Event> events = new HashSet<>();
 
     public boolean isExpired(){

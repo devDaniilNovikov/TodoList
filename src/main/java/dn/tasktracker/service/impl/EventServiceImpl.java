@@ -33,12 +33,12 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Map<String, List<Event>> findAllEventsByUserId(Long userId) {
+    public Map<String, List<Event>> findAllEventsOfUsersByUserId(Long userId) {
         return Map.of();
     }
 
     @Override
-    public Map<String, List<Event>> findAllEventsByTaskId(Long taskId) {
+    public Map<String, List<Event>> findAllEventsOfTasksByTaskId(Long taskId) {
         return Map.of();
     }
 

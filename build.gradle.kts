@@ -34,9 +34,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.mapstruct:mapstruct:1.5.5.Final")
-	implementation ("org.springframework.boot:spring-boot-starter-amqp")
 	implementation("org.apache.poi:poi:5.2.3")
-	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
+	implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 	implementation("org.apache.poi:poi-ooxml:5.2.3")
 	// https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
 	implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
@@ -45,7 +45,9 @@ dependencies {
 	implementation ("io.vavr:vavr:0.10.4")
 	implementation("com.squareup.okhttp3:okhttp:4.12.0")
 	// https://mvnrepository.com/artifact/io.springfox/springfox-swagger2
-	implementation("io.springfox:springfox-swagger2:2.8.0")
+	// https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations
+	implementation("io.swagger.core.v3:swagger-annotations:2.2.28")
+
 
 	annotationProcessor ("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 	annotationProcessor ("org.mapstruct:mapstruct-processor:1.5.5.Final")

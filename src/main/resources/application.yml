@@ -19,7 +19,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: tasktracker
-        format_sql: true
+
+        default_batch_fetch_size: 50
+
+
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     consumer:
@@ -88,4 +91,6 @@ logging:
     name: logs/application.log
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

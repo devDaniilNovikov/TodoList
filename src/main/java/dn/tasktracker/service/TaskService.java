@@ -23,6 +23,8 @@ public interface TaskService {
 
     void update(Long id,String status,Long userId);
 
+    void updateTaskList(List<Long> taskIds,String status,List<Long> userIds);
+
     void deleteById(Long id);
 
     void deleteAllByIds(List<Long> ids);

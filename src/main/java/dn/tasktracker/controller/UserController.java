@@ -1,8 +1,6 @@
 package dn.tasktracker.controller;
 
-import dn.tasktracker.dto.user.ListUserResponse;
-import dn.tasktracker.dto.user.UserCreateRequest;
-import dn.tasktracker.dto.user.UserResponse;
+import dn.tasktracker.dto.user.*;
 import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +29,8 @@ public class UserController {
     private static final String CHANGE_CREDENTIALS = "/api/v1/{id}/account/change/password";
     private static final String CHANGE_EMAIL = "/api/v1/{id}/account/change/email";
     private static final String ACCOUNTS_LIST = "/api/v1/accounts/page";
+    private static final String DELETE_ACCOUNT = "/api/v1/account/delete/{id}";
+    private static final String DELETE_ALL_ACCOUNTS = "/api/v1/accounts/delete";
     private final UserService userService;
 
     @GetMapping(ACCOUNTS_LIST)
@@ -41,9 +41,9 @@ public class UserController {
             @ApiResponse(responseCode = "404",description = "Пользователи не найдены"),
             @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
     })
-    public ListUserResponse listUserResponse(@RequestParam  int pageNumber,
-                                             @RequestParam  int pageSize) {
-        return userService.findAllWithPagination(PageRequest.of(pageNumber, pageSize));
+    public ListUserResponse listUserResponse(@RequestParam(defaultValue = "0") int pageNumber,
+                                             @RequestParam(defaultValue = "10") int pageSize) {
+        return userService.findAllWithPagination(pageNumber,pageSize);
     }
 
     @PostMapping(CREATE_ACCOUNT)
@@ -66,7 +66,7 @@ public class UserController {
             @ApiResponse(responseCode = "404",description = "Пользователи не найдены"),
             @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
     })
-    public List<UserResponse> getUsersByIds(@RequestParam List<Long> ids){
+    public ListUserResponse getUsersByIds(@RequestParam List<Long> ids){
         return userService.findAllByIds(ids);
     }
 
@@ -78,9 +78,8 @@ public class UserController {
             @ApiResponse(responseCode = "404",description = "Пользователи не найдены"),
             @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
     })
-    public List<UserEntity> getUsers(@RequestParam(defaultValue = "0") int pageNumber,
-                                     @RequestParam(defaultValue = "10") int pageSize) {
-        return userService.findAll(PageRequest.of(pageNumber, pageSize));
+    public ListUserResponse getUsers() {
+        return userService.findAll();
     }
 
     @GetMapping(GET_ACCOUNT_BY_ID)
@@ -105,9 +104,8 @@ public class UserController {
             @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
     })
     public void changePassword(@PathVariable Long id,
-                               @RequestParam String oldPassword,
-                               @RequestParam String newPassword) {
-        userService.changePassword(oldPassword,newPassword,id);
+                               @RequestBody ChangePasswordDto changePasswordDto) {
+        userService.changePassword(changePasswordDto,id);
 
     }
 
@@ -137,5 +135,15 @@ public class UserController {
     public void changeEmail(@PathVariable Long id,
                             @RequestParam String email){
         userService.changeEmailForUser(email,id);
+    }
+
+    @DeleteMapping(DELETE_ACCOUNT)
+    public void deleteAccount(@PathVariable Long id){
+        userService.deleteAccount(id);
+    }
+
+    @DeleteMapping(DELETE_ALL_ACCOUNTS)
+    public void deleteAllAccount(@RequestParam List<Long> ids){
+        userService.deleteAllByIds(ids);
     }
 }

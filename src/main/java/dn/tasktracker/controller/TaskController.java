@@ -19,6 +19,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.BindingResultUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.Files;
@@ -44,7 +46,9 @@ public class TaskController {
     private static final String DELETE_TASK = "/api/v1/task/delete/{id}";
     private static final String UPDATE_TASK_STATUS = "/api/v1/task/update/status/{id}";
     private static final String JSON_CONTENT_TYPE = "application/json";
-    private static final String DOWNLOAD_EXCEL_FILE = "/api/v1/task/excel/download";
+    private static final String EXPORT_TO_EXCEL_FILE = "/api/v1/task/excel/download";
+    private static final String UPDATE_MULTIPLE_TASKS = "/api/v/taskList/update";
+    private static final String DELETE_MULTIPLE_TASKS = "/api/v1/tasks/delete";
     
 
 
@@ -62,7 +66,7 @@ public class TaskController {
     }
 
 
-    @GetMapping(value = GET_TASK_WITH_PAGINATION,consumes = JSON_CONTENT_TYPE,produces = JSON_CONTENT_TYPE)
+    @GetMapping(value = GET_TASK_WITH_PAGINATION)
     @ResponseStatus(HttpStatus.OK)
     @Operation(description = "Получение списка задач постранично")
     @ApiResponses({
@@ -138,7 +142,26 @@ public class TaskController {
         taskService.deleteById(id);
     }
 
-    @GetMapping(DOWNLOAD_EXCEL_FILE)
+    @PatchMapping(UPDATE_MULTIPLE_TASKS)
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Обновление статуса у нескольких задач")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Задачи обновлены"),
+            @ApiResponse(responseCode = "404",description = "Задачи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
+    public void updateTaskList(@RequestParam List<Long> taskIds,
+                               @RequestParam String status,
+                               @RequestParam List<Long> userIds){
+        taskService.updateTaskList(taskIds,status,userIds);
+    }
+
+    @DeleteMapping(DELETE_MULTIPLE_TASKS)
+    public void deleteAllTasks(@RequestParam List<Long> ids){
+        taskService.deleteAllByIds(ids);
+    }
+
+    @GetMapping(EXPORT_TO_EXCEL_FILE)
     @SneakyThrows
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<Resource> exportTask(){

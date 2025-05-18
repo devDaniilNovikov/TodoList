@@ -22,12 +22,13 @@ public interface UserMapper {
 
     List<UserEntity> toEntityList(List<UserResponse> userResponseList);
 
-//    default ListUserResponse mapToResponseList(List<UserEntity> userEntities) {
-//        ListUserResponse listUserResponse = new ListUserResponse();
-//        Page<UserResponse> page = new PageImpl<>(userEntities.stream().map(this::toDto).toList());
-//        listUserResponse.setUsers(page);
-//        return listUserResponse;
-//    }
+    default ListUserResponse toList(List<UserEntity>users){
+        ListUserResponse listUserResponse = new ListUserResponse();
+        listUserResponse.setUsers(users.stream()
+                .map(this::toDto)
+                .toList());
+        return listUserResponse;
+    }
 
 
 

@@ -19,12 +19,13 @@ public interface TaskMapper extends Mappable<TaskEntity, TaskResponse> {
     @Override
     TaskResponse toDto(TaskEntity taskEntity);
 
-    default ListTaskResponse toListDto(List<TaskEntity> taskEntity) {
+    default ListTaskResponse mapToDtoList(List<TaskEntity> tasks){
         ListTaskResponse listTaskResponse = new ListTaskResponse();
-        listTaskResponse.setTasks(taskEntity.stream()
+        listTaskResponse.setTasks(tasks.stream()
                 .map(this::toDto)
                 .toList());
         return listTaskResponse;
     }
+
 
 }

@@ -35,8 +35,7 @@ public class MailSendingConfig {
 
     @Value("${spring.mail.protocol}")
     private String protocol;
-
-
+    
     @Value("${spring.properties.mail.auth}")
     private String isAuthEnabled;
 

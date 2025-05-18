@@ -2,6 +2,7 @@ package dn.tasktracker.controller;
 
 
 import dn.tasktracker.entity.TaskEntity;
+import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.service.StatisticService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,6 +23,7 @@ public class StatisticController {
 
     private static final String GET_USER_STAT_BY_TASKS = "/api/v1/stat/user/{id}";
     private static final String GET_USER_STAT_BY_TASK_STATUS = "/api/v1/stat/user/{id}/status/";
+    private static final String GET_STATISTIC_OF_ALL_USERS_BY_IDS = "/api/v1/stat/users";
     private final StatisticService statisticService;
 
     @GetMapping(GET_USER_STAT_BY_TASKS)
@@ -42,6 +44,11 @@ public class StatisticController {
     public Map<String,List<TaskEntity>> getUserStatByTaskStatus(@PathVariable Long id,
                                                                 @RequestParam String status) {
         return statisticService.getUserStatisticByStatus(id,status);
+    }
+
+    @GetMapping(GET_STATISTIC_OF_ALL_USERS_BY_IDS)
+    public Map<String ,List<TaskEntity>> getStatOfAllUsersByIds(@RequestParam List<Long> ids){
+        return statisticService.getStatisticOfUsersWithTasks(ids);
     }
 
 

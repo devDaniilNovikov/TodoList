@@ -32,7 +32,7 @@ public class StatisticServiceImpl implements StatisticService {
     @Override
     public Map<String, List<TaskEntity>> getUserStatisticByTasks(Long userId) {
         UserEntity user = userMapper.toEntity(userService.getById(userId));
-        Map<String, List<TaskEntity>> userMap = Map.of(user.getUsername(), user.getTasks());
+        Map<String, List<TaskEntity>> userMap = new HashMap<>();
         long countOfFailedTasks = user.getTasks()
                 .stream()
                 .filter(task -> task.getStatus().equals(String.valueOf(TaskStatus.EXPIRED)))
@@ -62,6 +62,14 @@ public class StatisticServiceImpl implements StatisticService {
         userMap.put(user.getUsername(),mapValues);
         log.info("UserMap is: {}",userMap);
         return userMap;
+    }
+
+    @Override
+    public Map<String, List<TaskEntity>> getStatisticOfUsersWithTasks(List<Long> userIds) {
+        return userRepository.findAllById(userIds)
+                .stream()
+                .collect(Collectors.toMap(UserEntity::getUsername,UserEntity::getTasks));
+
     }
 
 }

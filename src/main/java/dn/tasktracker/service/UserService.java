@@ -1,8 +1,6 @@
 package dn.tasktracker.service;
 
-import dn.tasktracker.dto.user.ListUserResponse;
-import dn.tasktracker.dto.user.UserCreateRequest;
-import dn.tasktracker.dto.user.UserResponse;
+import dn.tasktracker.dto.user.*;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;
 import org.springframework.data.domain.Pageable;
@@ -12,11 +10,11 @@ import java.util.Set;
 
 public interface UserService {
 
-    List<UserResponse> findAllByIds(List<Long> ids);
+    ListUserResponse findAllByIds(List<Long> ids);
 
-    List<UserEntity> findAll(Pageable pageable);
+    ListUserResponse findAll();
 
-    ListUserResponse findAllWithPagination(Pageable pageable);
+    ListUserResponse findAllWithPagination(int pageNumber,int pageSize);
 
     UserResponse createAccount(UserCreateRequest userCreateRequest);
 
@@ -30,9 +28,11 @@ public interface UserService {
 
     void deleteAccount(Long userId);
 
-    void changePassword(String oldPassword, String newPassword, Long userId);
+    void changePassword(ChangePasswordDto changePasswordDto,Long userId);
 
     void changeEmailForUser(String email, Long userId);
+
+    void deleteAllByIds(List<Long> ids);
 
 
 

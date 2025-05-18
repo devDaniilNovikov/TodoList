@@ -1,6 +1,5 @@
 package dn.tasktracker;
 
-import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -19,7 +18,6 @@ import java.io.File;
 @EnableAsync
 @EnableBatchProcessing
 @EnableAspectJAutoProxy
-@EnableRabbit
 @EnableTransactionManagement
 @EnableRetry
 public class TaskTrackerApplication {
