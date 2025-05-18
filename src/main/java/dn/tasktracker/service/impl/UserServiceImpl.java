@@ -37,8 +37,6 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ApplicationEventPublisher eventPublisher;
-    private final EventService eventService;
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final String EVENT_NAME = "Creating of User";
 
 
@@ -180,7 +178,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteAllByIds(List<Long> ids) {
+    public void deleteAllByIds(Set<Long> ids) {
             List<UserEntity> users = userRepository.findAllById(ids)
                     .stream()
                     .filter(Objects::nonNull)
@@ -204,17 +202,24 @@ public class UserServiceImpl implements UserService {
             }
             var usernames = users.stream()
                     .map(UserEntity::getUsername)
+                    .filter(username->!username.isEmpty())
+                    .filter(username->!username.isBlank())
+                    .map(String::trim)
                     .toList();
-            var userEvent = new DeletedEvent<UserEntity>(String.valueOf(usernames), true, users);
-            var taskEvent = new DeletedEvent<TaskEntity>(String.valueOf(taskIds),true,tasks);
-            var finalTaskEvent = taskEvent.makeEvent(tasks,String.valueOf(taskTitles));
-            var finalUserEvent = userEvent.makeEvent(users, usernames.toString());
+            var userEvent = new DeletedEvent<UserEntity>(mapToString(usernames), true, users);
+            var taskEvent = new DeletedEvent<TaskEntity>(mapToString(taskIds), true, tasks);
+            var finalTaskEvent = taskEvent.makeEvent(tasks,mapToString(taskTitles));
+            var finalUserEvent = userEvent.makeEvent(users, mapToString(usernames));
             userRepository.deleteAllInBatch(users);
             eventPublisher.publishEvent(finalTaskEvent);
             eventPublisher.publishEvent(finalUserEvent);
             log.info("Deleted Tasks: {}",taskTitles);
             log.info("Deleted Users: {}", usernames);
         }
+
+    private String mapToString(Object element){
+        return String.valueOf(element);
+    }
 
 
 }

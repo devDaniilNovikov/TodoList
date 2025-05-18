@@ -65,7 +65,7 @@ public class StatisticServiceImpl implements StatisticService {
     }
 
     @Override
-    public Map<String, List<TaskEntity>> getStatisticOfUsersWithTasks(List<Long> userIds) {
+    public Map<String, List<TaskEntity>> getStatisticOfUsersWithTasks(Set<Long> userIds) {
         return userRepository.findAllById(userIds)
                 .stream()
                 .collect(Collectors.toMap(UserEntity::getUsername,UserEntity::getTasks));

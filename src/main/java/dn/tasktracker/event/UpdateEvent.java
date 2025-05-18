@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 
@@ -15,7 +16,7 @@ import java.util.List;
 public class UpdateEvent<T> extends AbstractEvent<T> {
 
 
-    public UpdateEvent(String eventName, boolean deletedAt,List<T> elements) {
+    public UpdateEvent(String eventName, boolean deletedAt, Collection<T> elements) {
         super(eventName, deletedAt,elements);
     }
 
@@ -30,7 +31,7 @@ public class UpdateEvent<T> extends AbstractEvent<T> {
                 .deletedAt(true)
                 .build();
     }
-    public UpdateEvent<T> makeEvent(List<T> entity, String eventName) {
+    public UpdateEvent<T> makeEvent(Collection<T> entity, String eventName) {
         return UpdateEvent.<T>builder()
                 .eventName(eventName)
                 .elements(entity)

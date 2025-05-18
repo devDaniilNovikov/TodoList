@@ -5,6 +5,7 @@ import dn.tasktracker.entity.UserEntity;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface StatisticService {
 
@@ -12,7 +13,7 @@ public interface StatisticService {
 
     Map<String, List<TaskEntity>> getUserStatisticByStatus(Long userId, String status);
 
-    Map<String,List<TaskEntity>> getStatisticOfUsersWithTasks(List<Long> userIds);
+    Map<String,List<TaskEntity>> getStatisticOfUsersWithTasks(Set<Long> userIds);
 
 
 

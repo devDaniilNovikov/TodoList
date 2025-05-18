@@ -20,6 +20,7 @@ public class CreateEvent<T> extends AbstractEvent<T> {
     public CreateEvent(String eventName, boolean deletedAt,String data) {
         super(eventName, deletedAt,data);
     }
+
     @Override
     public CreateEvent<T> makeEvent(T entity, String eventName) {
         return CreateEvent.<T>builder()

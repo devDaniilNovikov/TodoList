@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -150,14 +151,21 @@ public class TaskController {
             @ApiResponse(responseCode = "404",description = "Задачи не найдены"),
             @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
     })
-    public void updateTaskList(@RequestParam List<Long> taskIds,
+    public void updateTaskList(@RequestParam Set<Long> taskIds,
                                @RequestParam String status,
-                               @RequestParam List<Long> userIds){
+                               @RequestParam Set<Long> userIds){
         taskService.updateTaskList(taskIds,status,userIds);
     }
 
     @DeleteMapping(DELETE_MULTIPLE_TASKS)
-    public void deleteAllTasks(@RequestParam List<Long> ids){
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(description = "Удаление нескольких задач по их уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Задачи не удалены"),
+            @ApiResponse(responseCode = "404",description = "Задачи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
+    public void deleteAllTasks(@RequestParam Set<Long> ids){
         taskService.deleteAllByIds(ids);
     }
 

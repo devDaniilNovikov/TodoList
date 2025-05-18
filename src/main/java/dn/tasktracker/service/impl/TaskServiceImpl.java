@@ -36,6 +36,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -103,7 +104,10 @@ public class TaskServiceImpl implements TaskService {
     public TaskEntity save(TaskRequest taskRequest) {
         TaskEntity taskEntity = new TaskEntity();
         ThreadLocalRandom.current();
-        var taskTitleNumber = String.valueOf(ThreadLocalRandom.current().nextInt(1000));
+        var taskTitleNumber = String.valueOf(
+                ThreadLocalRandom.current()
+                .nextInt(1000)
+        );
         taskEntity.setTitle("TASK_" + taskTitleNumber);
         taskEntity.setDescription(taskRequest.getDescription());
         taskEntity.setStatus(String.valueOf(TaskStatus.IN_PROGRESS));
@@ -168,14 +172,13 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public void updateTaskList(List<Long> taskIds, String status, List<Long> userIds) {
+    public void updateTaskList(Set<Long> taskIds, String status, Set<Long> userIds) {
         var tasks = userRepository.findAllById(userIds)
                 .stream()
                 .filter(Objects::nonNull)
                 .flatMap(user -> user.getTasks().stream())
                 .filter(task -> taskIds.contains(task.getId()))
-                .distinct()
-                .toList();
+                .collect(Collectors.toSet());
 
         tasks.forEach(task -> {
             task.setStatus(status);
@@ -211,7 +214,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public void deleteAllByIds(List<Long> ids) {
+    public void deleteAllByIds(Set<Long> ids) {
         List<TaskEntity> taskEntities = taskRepository.findAllById(ids);
         taskEntities.forEach(taskEntity -> {
             taskRepository.deleteAllInBatch(taskEntities);
@@ -224,7 +227,7 @@ public class TaskServiceImpl implements TaskService {
                 .stream()
                 .toString());
         var event = new DeletedEvent<>(mapToString(taskTitles),true,taskEntities);
-        var finalEvent = event.makeEvent(taskEntities,String.valueOf(taskTitles));
+        var finalEvent = event.makeEvent(taskEntities,mapToString(taskTitles));
         eventPublisher.publishEvent(finalEvent);
 
 

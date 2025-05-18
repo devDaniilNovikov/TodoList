@@ -7,7 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.lang.annotation.ElementType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Data
@@ -17,8 +19,10 @@ public class AbstractEvent<T> {
 
     private String eventName;
     private boolean deletedAt;
-    private List<T> elements = new ArrayList<>();
+    private Collection<T> elements;
     private String data;
+
+
 
     public AbstractEvent(String eventName, boolean deletedAt,String data) {
         this.eventName = eventName;
@@ -31,7 +35,7 @@ public class AbstractEvent<T> {
         this.deletedAt = deletedAt;
     }
 
-    public AbstractEvent(String eventName, boolean deletedAt,List<T> elements) {
+    public AbstractEvent(String eventName, boolean deletedAt,Collection<T> elements) {
         this.eventName = eventName;
         this.deletedAt = deletedAt;
         this.elements = elements;
@@ -45,7 +49,7 @@ public class AbstractEvent<T> {
                 .build();
     }
 
-    public AbstractEvent<T> makeEvent(List<T> elements,String eventName){
+    public AbstractEvent<T> makeEvent(Collection<T> elements,String eventName){
         return AbstractEvent.<T>builder()
                 .eventName(eventName)
                 .elements(elements)

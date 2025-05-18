@@ -15,6 +15,7 @@ import org.springframework.web.service.annotation.HttpExchange;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -47,7 +48,7 @@ public class StatisticController {
     }
 
     @GetMapping(GET_STATISTIC_OF_ALL_USERS_BY_IDS)
-    public Map<String ,List<TaskEntity>> getStatOfAllUsersByIds(@RequestParam List<Long> ids){
+    public Map<String ,List<TaskEntity>> getStatOfAllUsersByIds(@RequestParam Set<Long> ids){
         return statisticService.getStatisticOfUsersWithTasks(ids);
     }
 

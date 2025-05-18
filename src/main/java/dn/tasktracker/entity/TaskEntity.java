@@ -85,7 +85,15 @@ public class TaskEntity implements Serializable {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         TaskEntity that = (TaskEntity) o;
-        return completedAt == that.completedAt && Objects.equals(id, that.id) && Objects.equals(title, that.title) && Objects.equals(description, that.description) && Objects.equals(status, that.status) && Objects.equals(createdAt, that.createdAt) && Objects.equals(updatedAt, that.updatedAt) && Objects.equals(user, that.user) && Objects.equals(subTasks, that.subTasks) && Objects.equals(events, that.events);
+        return completedAt == that.completedAt && Objects.equals(id, that.id)
+                && Objects.equals(title, that.title)
+                && Objects.equals(description, that.description)
+                && Objects.equals(status, that.status)
+                && Objects.equals(createdAt, that.createdAt)
+                && Objects.equals(updatedAt, that.updatedAt)
+                && Objects.equals(user, that.user)
+                && Objects.equals(subTasks, that.subTasks)
+                && Objects.equals(events, that.events);
     }
 
     @Override

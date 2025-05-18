@@ -56,17 +56,17 @@ public class CustomExceptionAdvice {
                         .build());
     }
 
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<ErrorBody> handleException(WebRequest request, Exception ex){
-//        return ResponseEntity
-//                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                .contentType(MediaType.APPLICATION_JSON)
-//                .body(ErrorBody.builder()
-//                        .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
-//                        .description(ex.getLocalizedMessage())
-//                        .path(request.getDescription(false))
-//                        .build());
-//    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorBody> handleException(WebRequest request, Exception ex){
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ErrorBody.builder()
+                        .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                        .description(ex.getLocalizedMessage())
+                        .path(request.getDescription(false))
+                        .build());
+    }
 }
 
 

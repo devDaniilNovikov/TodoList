@@ -32,7 +32,7 @@ public interface UserService {
 
     void changeEmailForUser(String email, Long userId);
 
-    void deleteAllByIds(List<Long> ids);
+    void deleteAllByIds(Set<Long> ids);
 
 
 

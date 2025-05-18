@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -138,12 +139,28 @@ public class UserController {
     }
 
     @DeleteMapping(DELETE_ACCOUNT)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(description = "Удаление аккаунта пользователя по его уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Аккаунт пользователя удален"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные"),
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден"),
+            @ApiResponse(responseCode = "500", description = "Неизвестная ошибка сервера")
+    })
     public void deleteAccount(@PathVariable Long id){
         userService.deleteAccount(id);
     }
 
     @DeleteMapping(DELETE_ALL_ACCOUNTS)
-    public void deleteAllAccount(@RequestParam List<Long> ids){
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(description = "Удаление нескольких аккаунтов по их уникальному идентификатору")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Аккаунты удалены"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные"),
+            @ApiResponse(responseCode = "404", description = "Пользователи не найдены"),
+            @ApiResponse(responseCode = "500", description = "Неизвестная ошибка сервера")
+    })
+    public void deleteAllAccount(@RequestParam Set<Long> ids){
         userService.deleteAllByIds(ids);
     }
 }
