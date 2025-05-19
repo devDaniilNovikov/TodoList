@@ -60,7 +60,7 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
   cache:
-    cache-names: taskAfterCreate,taskById,taskAfterUpdate,taskList,taskListWithPagination
+    cache-names: taskAfterCreate,taskById,taskAfterUpdate,taskList,taskListWithPagination,usersWithTasks
   threads:
     virtual:
       enabled: true

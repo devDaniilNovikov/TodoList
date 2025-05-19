@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -56,6 +57,7 @@ public class TaskEntity implements Serializable {
 
     @OneToMany(mappedBy = "tasks",fetch = FetchType.LAZY)
     @JsonIgnore
+    @BatchSize(size = 10)
     private List<SubTaskEntity> subTasks = new ArrayList<>();
 
     @OneToMany(mappedBy = "tasks",cascade = CascadeType.ALL,fetch = FetchType.LAZY)

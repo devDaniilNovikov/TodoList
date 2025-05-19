@@ -1,4 +1,7 @@
 package dn.tasktracker.service.impl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dn.tasktracker.aop.Loggable;
 import dn.tasktracker.dto.user.*;
 import dn.tasktracker.entity.TaskEntity;
@@ -15,6 +18,9 @@ import dn.tasktracker.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,10 +28,13 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -38,26 +47,52 @@ public class UserServiceImpl implements UserService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ApplicationEventPublisher eventPublisher;
     private static final String EVENT_NAME = "Creating of User";
+    @Value("${spring.cache.cache-names}")
+    private List<String> cacheNames;
 
 
     @Override
-    public ListUserResponse findAllByIds(List<Long> ids) {
-        return userMapper.toList(userRepository.findAllById(ids)
+    public ListUserResponse findAllUsersByIds(List<Long> userIds) {
+        return userMapper.toList(userRepository.findAllById(userIds)
                 .stream()
                 .filter(Objects::nonNull)
                 .toList());
     }
 
+    @Override
+    public ListUserResponse findAllByUsersTasksIds (List<Long> taskIds) {
+        return userMapper.toList(userRepository.findAllByTasksIds(taskIds)
+                .stream()
+                .filter(Objects::nonNull)
+                .peek(this::writeToRedis)
+                .toList());
+    }
+
+    private void writeToRedis(UserEntity user) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            objectMapper.setDateFormat(DateFormat.getDateInstance());
+            var key = cacheNames.get(5);
+            var value = objectMapper.writeValueAsString(user);
+            redisTemplate.opsForList().leftPush(key, value);
+            redisTemplate.expire(key, 5, TimeUnit.MINUTES);
+            log.info("Value write to redis: key= {}, value= {}",key,value);
+        } catch (JsonProcessingException e) {
+            log.info("JsonProcessingException is: {}", e.getLocalizedMessage());
+        }
+
+    }
 
     @Override
     @Loggable
-    public ListUserResponse findAll() {
+    public ListUserResponse findAllUsers() {
         return userMapper.toList(userRepository.findAll());
     }
 
     @Override
     @Loggable
-    public ListUserResponse findAllWithPagination(int pageNumber,int pageSize) {
+    public ListUserResponse findAllUsersWithPagination(int pageNumber,int pageSize) {
         return userMapper.toList(userRepository.findAll(
                 PageRequest.of(pageNumber,pageSize)).getContent());
     }

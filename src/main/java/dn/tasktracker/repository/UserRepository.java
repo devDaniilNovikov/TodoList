@@ -20,5 +20,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     boolean existsByUsername(String username);
 
+    @Query("select u from UserEntity u join u.tasks t where t.id in :ids")
+    List<UserEntity> findAllByTasksIds(List<Long> ids);
+
 
 }

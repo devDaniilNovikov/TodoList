@@ -10,11 +10,13 @@ import java.util.Set;
 
 public interface UserService {
 
-    ListUserResponse findAllByIds(List<Long> ids);
+    ListUserResponse findAllUsersByIds(List<Long> userIds);
 
-    ListUserResponse findAll();
+    ListUserResponse findAllByUsersTasksIds(List<Long> taskIds);
 
-    ListUserResponse findAllWithPagination(int pageNumber,int pageSize);
+    ListUserResponse findAllUsers();
+
+    ListUserResponse findAllUsersWithPagination(int pageNumber,int pageSize);
 
     UserResponse createAccount(UserCreateRequest userCreateRequest);
 

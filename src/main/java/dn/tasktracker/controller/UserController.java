@@ -32,7 +32,20 @@ public class UserController {
     private static final String ACCOUNTS_LIST = "/api/v1/accounts/page";
     private static final String DELETE_ACCOUNT = "/api/v1/account/delete/{id}";
     private static final String DELETE_ALL_ACCOUNTS = "/api/v1/accounts/delete";
+    private static final String GET_USERS_BY_TASK_IDS = "/api/v1/users-by-taskIds";
     private final UserService userService;
+
+    @GetMapping(GET_USERS_BY_TASK_IDS)
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(description = "Получение списка пользователей по уникальному идентификатору задач, которые им присвоены")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Список пользователей получен"),
+            @ApiResponse(responseCode = "404",description = "Пользователи не найдены"),
+            @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
+    })
+    public ListUserResponse findAllByTaskIds(@RequestParam List<Long> taskIds){
+        return userService.findAllByUsersTasksIds(taskIds);
+    }
 
     @GetMapping(ACCOUNTS_LIST)
     @ResponseStatus(HttpStatus.OK)
@@ -44,7 +57,7 @@ public class UserController {
     })
     public ListUserResponse listUserResponse(@RequestParam(defaultValue = "0") int pageNumber,
                                              @RequestParam(defaultValue = "10") int pageSize) {
-        return userService.findAllWithPagination(pageNumber,pageSize);
+        return userService.findAllUsersWithPagination(pageNumber,pageSize);
     }
 
     @PostMapping(CREATE_ACCOUNT)
@@ -67,8 +80,8 @@ public class UserController {
             @ApiResponse(responseCode = "404",description = "Пользователи не найдены"),
             @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
     })
-    public ListUserResponse getUsersByIds(@RequestParam List<Long> ids){
-        return userService.findAllByIds(ids);
+    public ListUserResponse getUsersByIds(@RequestParam List<Long> userIds){
+        return userService.findAllUsersByIds(userIds);
     }
 
     @GetMapping(GET_ALL_USERS)
@@ -80,7 +93,7 @@ public class UserController {
             @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
     })
     public ListUserResponse getUsers() {
-        return userService.findAll();
+        return userService.findAllUsers();
     }
 
     @GetMapping(GET_ACCOUNT_BY_ID)
