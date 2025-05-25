@@ -3,24 +3,23 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dn.tasktracker.aop.Loggable;
-import dn.tasktracker.dto.user.*;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.entity.UserStatus;
 import dn.tasktracker.event.*;
-import dn.tasktracker.exception.UserAlreadyExistsException;
-import dn.tasktracker.exception.UserNotFoundException;
-import dn.tasktracker.mapper.UserMapper;
+import dn.tasktracker.web.exception.UserAlreadyExistsException;
+import dn.tasktracker.web.exception.UserNotFoundException;
+import dn.tasktracker.web.mapper.UserMapper;
 import dn.tasktracker.repository.TaskRepository;
 import dn.tasktracker.repository.UserRepository;
-import dn.tasktracker.service.EventService;
 import dn.tasktracker.service.UserService;
-import jakarta.validation.Valid;
+import dn.tasktracker.web.dto.user.ChangePasswordDto;
+import dn.tasktracker.web.dto.user.ListUserResponse;
+import dn.tasktracker.web.dto.user.UserCreateRequest;
+import dn.tasktracker.web.dto.user.UserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -30,16 +29,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DateFormat;
 import java.text.MessageFormat;
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public  class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
@@ -53,6 +50,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ListUserResponse findAllUsersByIds(List<Long> userIds) {
+        if (userIds.isEmpty()){
+            throw new IllegalArgumentException("List of ids can't be empty");
+        }
         return userMapper.toList(userRepository.findAllById(userIds)
                 .stream()
                 .filter(Objects::nonNull)
@@ -60,7 +60,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ListUserResponse findAllByUsersTasksIds (List<Long> taskIds) {
+    public ListUserResponse findAllByUsersTasksIds(List<Long> taskIds) {
+        if (taskIds.isEmpty()){
+            throw new IllegalArgumentException("List of ids can't be empty");
+        }
         return userMapper.toList(userRepository.findAllByTasksIds(taskIds)
                 .stream()
                 .filter(Objects::nonNull)
@@ -92,14 +95,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Loggable
-    public ListUserResponse findAllUsersWithPagination(int pageNumber,int pageSize) {
+    public ListUserResponse findAllUsersWithPagination(int pageNumber, int pageSize) {
         return userMapper.toList(userRepository.findAll(
-                PageRequest.of(pageNumber,pageSize)).getContent());
+                PageRequest.of(pageNumber, pageSize))
+                .getContent());
     }
 
 
     @Override
     @Transactional
+    @Loggable
     public UserResponse createAccount(UserCreateRequest userCreateRequest) {
         UserEntity user = new UserEntity();
         user.setUsername(userCreateRequest.getUsername());
@@ -113,16 +118,11 @@ public class UserServiceImpl implements UserService {
         user.setStatus(String.valueOf(UserStatus.ACTIVE));
         user.setEmail(userCreateRequest.getEmail());
         userRepository.save(user);
-        var event = new CreateEvent<UserEntity>(user.getUsername(),true);
+        var event = new CreateEvent<UserEntity>(user.getUsername());
         var publishEvent = event.makeEvent(user,EVENT_NAME,user.getUsername());
         eventPublisher.publishEvent(publishEvent);
         return userMapper.toDto(user);
     }
-
-
-
-
-
 
 
     @Override
@@ -130,6 +130,18 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException(
                         MessageFormat.format("User with id: {0} not found", userId))));
+    }
+
+    @Override
+    public UserResponse getByTaskTitle(String taskTitle) {
+        return userMapper.toDto(userRepository.findByTaskTitle(taskTitle)
+                .stream()
+                .map(UserEntity::getTasks)
+                .flatMap(Collection::stream)
+                .takeWhile(task->task.getTitle().equals(taskTitle))
+                .map(TaskEntity::getUser)
+                .findAny()
+                .orElseThrow(()->new UserNotFoundException("User not found")));
     }
 
     @Override
@@ -155,10 +167,8 @@ public class UserServiceImpl implements UserService {
                         .orElseThrow(()->new UserNotFoundException(
                                 MessageFormat.format("User with id: {0} not found", userId)));
         user.setStatus(String.valueOf(UserStatus.BANNED));
-
         userRepository.save(user);
         log.info("User {} is get ban! Actual status: {}",userId, user.getStatus());
-
     }
 
     @Override
@@ -167,7 +177,6 @@ public class UserServiceImpl implements UserService {
        UserEntity user = userRepository.findById(userId)
                .orElseThrow(()->new UserNotFoundException(
                        MessageFormat.format("User with id: {0} not found", userId)));
-
         List<Long> taskIds = user.getTasks()
                 .stream()
                 .dropWhile(task->task.getId()!=null)
@@ -185,9 +194,10 @@ public class UserServiceImpl implements UserService {
        log.info("Пользователь {} удален.",user.getUsername());
     }
 
+
     @Override
     @Transactional
-    public void changePassword(@Valid ChangePasswordDto changePasswordDto, Long userId) {
+    public void changePassword(ChangePasswordDto changePasswordDto, Long userId) {
         UserEntity user = userMapper.toEntity(getById(userId));
         if (!user.getPassword().equals(changePasswordDto.getOldPassword())) {
             throw new IllegalArgumentException("Пароль неверный, повторите попытку снова");
@@ -213,13 +223,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteAllByIds(Set<Long> ids) {
-            List<UserEntity> users = userRepository.findAllById(ids)
+    @Transactional
+    public void deleteAllUsersByIds(Set<Long> userIds) {
+        if (userIds.isEmpty()){
+            throw new IllegalArgumentException("List of ids can't be empty");
+        }
+            List<UserEntity> users = userRepository.findAllById(userIds)
                     .stream()
                     .filter(Objects::nonNull)
                     .toList();
             List<Long> taskIds = users.stream()
-                    .flatMap(user -> user.getTasks().stream())
+                    .map(UserEntity::getTasks)
+                    .flatMap(Collection::stream)
                     .map(TaskEntity::getId)
                     .filter(Objects::nonNull)
                     .toList();
@@ -241,8 +256,8 @@ public class UserServiceImpl implements UserService {
                     .filter(username->!username.isBlank())
                     .map(String::trim)
                     .toList();
-            var userEvent = new DeletedEvent<UserEntity>(mapToString(usernames), true, users);
-            var taskEvent = new DeletedEvent<TaskEntity>(mapToString(taskIds), true, tasks);
+            DeletedEvent<UserEntity> userEvent = new DeletedEvent<>(mapToString(usernames), true, users);
+            DeletedEvent<TaskEntity> taskEvent = new DeletedEvent<>(mapToString(taskIds), true, tasks);
             var finalTaskEvent = taskEvent.makeEvent(tasks,mapToString(taskTitles));
             var finalUserEvent = userEvent.makeEvent(users, mapToString(usernames));
             userRepository.deleteAllInBatch(users);

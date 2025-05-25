@@ -4,18 +4,15 @@ package dn.tasktracker.service.impl;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.TaskStatus;
 import dn.tasktracker.entity.UserEntity;
-import dn.tasktracker.entity.UserStatus;
-import dn.tasktracker.exception.UserNotFoundException;
-import dn.tasktracker.mapper.UserMapper;
-import dn.tasktracker.repository.TaskRepository;
+import dn.tasktracker.web.mapper.UserMapper;
 import dn.tasktracker.repository.UserRepository;
 import dn.tasktracker.service.StatisticService;
 import dn.tasktracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,6 +24,9 @@ public class StatisticServiceImpl implements StatisticService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final UserService userService;
+
+    @Value("${spring.cache.cache-names}")
+    private List<String> cacheNames;
 
 
     @Override
@@ -45,8 +45,6 @@ public class StatisticServiceImpl implements StatisticService {
         }
         log.info("Пользователь с именем: {} имеет {} проваленных задач",
                 user.getUsername(), countOfFailedTasks);
-
-
         return userMap;
     }
 
@@ -65,10 +63,10 @@ public class StatisticServiceImpl implements StatisticService {
     }
 
     @Override
-    public Map<String, List<TaskEntity>> getStatisticOfUsersWithTasks(Set<Long> userIds) {
+    public Map<String, List<TaskEntity>> getUsersStatisticWithTasks (Set<Long> userIds) {
         return userRepository.findAllById(userIds)
                 .stream()
-                .collect(Collectors.toMap(UserEntity::getUsername,UserEntity::getTasks));
+                .collect(Collectors.toMap(UserEntity::getUsername, UserEntity::getTasks));
 
     }
 

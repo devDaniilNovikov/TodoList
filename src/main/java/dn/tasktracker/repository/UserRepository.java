@@ -20,8 +20,14 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     boolean existsByUsername(String username);
 
-    @Query("select u from UserEntity u join u.tasks t where t.id in :ids")
+    @Query(value = "select u from UserEntity u join fetch u.tasks t where t.id in :ids")
     List<UserEntity> findAllByTasksIds(List<Long> ids);
+
+    @Query("select u from UserEntity u join u.tasks t where t.title = :taskTitle")
+    Optional<UserEntity> findByTaskTitle(String taskTitle);
+
+
+
 
 
 }

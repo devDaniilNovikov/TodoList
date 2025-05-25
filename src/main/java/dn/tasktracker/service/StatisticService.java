@@ -13,7 +13,7 @@ public interface StatisticService {
 
     Map<String, List<TaskEntity>> getUserStatisticByStatus(Long userId, String status);
 
-    Map<String,List<TaskEntity>> getStatisticOfUsersWithTasks(Set<Long> userIds);
+    Map<String,List<TaskEntity>> getUsersStatisticWithTasks(Set<Long> userIds);
 
 
 

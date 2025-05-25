@@ -30,6 +30,10 @@ public class AbstractEvent<T> {
         this.data = data;
     }
 
+    public AbstractEvent(String eventName) {
+        this.eventName = eventName;
+    }
+
     public AbstractEvent(String eventName, boolean deletedAt) {
         this.eventName = eventName;
         this.deletedAt = deletedAt;

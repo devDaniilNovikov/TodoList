@@ -1,12 +1,11 @@
 package dn.tasktracker.service;
 
-import dn.tasktracker.dto.*;
-import dn.tasktracker.dto.user.UserResponse;
 import dn.tasktracker.entity.TaskEntity;
-import dn.tasktracker.entity.UserEntity;
+import dn.tasktracker.web.dto.ListTaskResponse;
+import dn.tasktracker.web.dto.TaskRequest;
+import dn.tasktracker.web.dto.TaskResponse;
+import dn.tasktracker.web.dto.TaskSortDto;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public interface TaskService {
@@ -28,7 +27,7 @@ public interface TaskService {
 
     void deleteById(Long id);
 
-    void deleteAllByIds(Set<Long> ids);
+   void deleteAllByIds(Set<Long> ids);
 
 
 }

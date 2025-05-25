@@ -3,6 +3,7 @@ package dn.tasktracker.configuration.cache;
 import lombok.Data;
 import org.springframework.boot.autoconfigure.cache.CacheType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.annotation.AliasFor;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;

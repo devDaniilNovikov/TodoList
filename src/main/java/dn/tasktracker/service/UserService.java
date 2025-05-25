@@ -1,9 +1,9 @@
 package dn.tasktracker.service;
 
-import dn.tasktracker.dto.user.*;
-import dn.tasktracker.entity.TaskEntity;
-import dn.tasktracker.entity.UserEntity;
-import org.springframework.data.domain.Pageable;
+import dn.tasktracker.web.dto.user.ChangePasswordDto;
+import dn.tasktracker.web.dto.user.ListUserResponse;
+import dn.tasktracker.web.dto.user.UserCreateRequest;
+import dn.tasktracker.web.dto.user.UserResponse;
 
 import java.util.List;
 import java.util.Set;
@@ -22,6 +22,8 @@ public interface UserService {
 
     UserResponse getById(Long userId);
 
+    UserResponse getByTaskTitle(String taskTitle);
+
     UserResponse getByUsername(String username);
 
     UserResponse getByPhoneNumber(String phoneNumber);
@@ -30,11 +32,11 @@ public interface UserService {
 
     void deleteAccount(Long userId);
 
-    void changePassword(ChangePasswordDto changePasswordDto,Long userId);
+    void changePassword(ChangePasswordDto changePasswordDto, Long userId);
 
     void changeEmailForUser(String email, Long userId);
 
-    void deleteAllByIds(Set<Long> ids);
+    void deleteAllUsersByIds(Set<Long> ids);
 
 
 

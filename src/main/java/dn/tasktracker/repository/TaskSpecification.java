@@ -1,6 +1,6 @@
 package dn.tasktracker.repository;
 
-import dn.tasktracker.dto.TaskSortDto;
+import dn.tasktracker.web.dto.TaskSortDto;
 import dn.tasktracker.entity.TaskEntity;
 import org.springframework.data.jpa.domain.Specification;
 

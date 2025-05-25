@@ -37,4 +37,10 @@ public class CreateEvent<T> extends AbstractEvent<T> {
                 .build();
     }
 
+    public CreateEvent(String eventName){
+        super(eventName);
+    }
+
+
+
 }

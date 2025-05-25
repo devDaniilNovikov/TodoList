@@ -16,10 +16,10 @@ import org.springframework.data.redis.core.index.Indexed;
         @Index(name = "idx_events_task_id", columnList = "task_id"),
         @Index(name = "idx_events_user_id", columnList = "user_id")
 })
-public class Event {
-    @Id
-    private Long id;
+public class Event extends BasedEntity {
+
     private String name;
+
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)

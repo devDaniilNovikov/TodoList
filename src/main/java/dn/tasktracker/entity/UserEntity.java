@@ -1,48 +1,30 @@
 package dn.tasktracker.entity;
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
-
 @Entity
-@Table(schema = "tasktracker", name = "users",
-        indexes = @Index(name = "idx_users_username",
-                columnList = "username"))
+@Table(schema = "tasktracker", name = "users", indexes = @Index(name = "idx_users_username", columnList = "username"))
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserEntity implements Serializable {
+public class UserEntity extends BasedEntity implements Serializable{
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+
 
     @Column(unique = true, nullable = false,length = 20)
     private String username;
 
     @Column(nullable = false)
     private String password;
-
-    @CreationTimestamp
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
-    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user",cascade = CascadeType.MERGE,fetch = FetchType.LAZY)
     @JsonIgnore
@@ -60,6 +42,23 @@ public class UserEntity implements Serializable {
     @OneToMany(mappedBy = "users",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<Event> events = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    @BatchSize(size = 10)
+    @JsonManagedReference
+    private Set<NotificationEntity> notifications = new HashSet<>();
+
+
+    @Column(unique = true,length = 11)
+    private String phoneNumber;
+
+
+    public void addNotification(NotificationEntity notificationEntity){
+        if (notificationEntity==null){
+            notifications = new HashSet<>();
+        }
+        notifications.add(notificationEntity);
+    }
 
 
     public void addTask(TaskEntity task){
@@ -85,9 +84,6 @@ public class UserEntity implements Serializable {
     public void removeEvent(Event event){
         events.remove(event);
     }
-
-    @Column(unique = true,length = 11)
-    private String phoneNumber;
 
 
 

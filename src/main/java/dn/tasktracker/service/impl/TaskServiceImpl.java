@@ -3,23 +3,24 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dn.tasktracker.aop.Loggable;
-import dn.tasktracker.dto.*;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.TaskStatus;
-import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.event.*;
-import dn.tasktracker.exception.TaskNotFoundException;
-import dn.tasktracker.exception.UserNotFoundException;
-import dn.tasktracker.mapper.TaskMapper;
+import dn.tasktracker.web.exception.TaskNotFoundException;
+import dn.tasktracker.web.exception.UserNotFoundException;
+import dn.tasktracker.web.mapper.TaskMapper;
 import dn.tasktracker.repository.TaskRepository;
 import dn.tasktracker.repository.TaskSpecification;
 import dn.tasktracker.repository.UserRepository;
 import dn.tasktracker.service.EmailService;
-import dn.tasktracker.service.EventService;
 import dn.tasktracker.service.TaskService;
+import dn.tasktracker.web.dto.ListTaskResponse;
+import dn.tasktracker.web.dto.TaskRequest;
+import dn.tasktracker.web.dto.TaskResponse;
+import dn.tasktracker.web.dto.TaskSortDto;
+import io.lettuce.core.RedisException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.event.spi.DeleteEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,11 +29,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -124,7 +123,11 @@ public class TaskServiceImpl implements TaskService {
         var event = new CreateEvent<TaskEntity>(taskEntity.getTitle(),true);
         var finalEvent = event.makeEvent(taskEntity,EVENT_NAME,taskEntity.getTitle());;
         eventPublisher.publishEvent(finalEvent);
-        writeToRedis(taskEntity);
+        var isWriteToRedis = writeToRedis(taskEntity);
+        if(!isWriteToRedis){
+            log.info("Value not write to Redis");
+            throw new RedisException("Cant write to Redis, please try again");
+        }
 //        var mails = userRepository.findAll()
 //                .stream()
 //                .map(UserEntity::getEmail)
@@ -202,7 +205,7 @@ public class TaskServiceImpl implements TaskService {
         taskRepository.findById(id)
                 .ifPresentOrElse(taskEntity -> {
                     taskRepository.delete(taskEntity);
-                    var event = new DeletedEvent<TaskEntity>(taskEntity.getTitle(),true);
+                    DeletedEvent<TaskEntity>  event = new DeletedEvent<TaskEntity>(taskEntity.getTitle(),true);
                     var finalEvent = event.makeEvent(taskEntity,taskEntity.getTitle());
                     eventPublisher.publishEvent(finalEvent);
                     log.info("Id of deleted task: {}", taskEntity.getId());
@@ -226,7 +229,7 @@ public class TaskServiceImpl implements TaskService {
                 .toList()
                 .stream()
                 .toString());
-        var event = new DeletedEvent<>(mapToString(taskTitles),true,taskEntities);
+        DeletedEvent<TaskEntity> event = new DeletedEvent<>(mapToString(taskTitles), true,taskEntities);
         var finalEvent = event.makeEvent(taskEntities,mapToString(taskTitles));
         eventPublisher.publishEvent(finalEvent);
 
@@ -247,7 +250,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
 
-    private void writeToRedis(TaskEntity taskEntity){
+    private boolean writeToRedis(TaskEntity taskEntity){
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule());
@@ -255,9 +258,10 @@ public class TaskServiceImpl implements TaskService {
             var value = objectMapper.writeValueAsString(taskEntity);
             redisTemplate.opsForValue().set(key, value);
             redisTemplate.expire(mapToString(taskEntity.getId()),ttl.toMinutes(),TimeUnit.MINUTES);
-        }  catch (JsonProcessingException e ){
+            return true;
+        }  catch (JsonProcessingException e){
             log.error("Error writing value in redis: {}",e.getLocalizedMessage());
-            throw new RuntimeException();
+            return false;
         }
     }
 

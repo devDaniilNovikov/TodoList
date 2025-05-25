@@ -19,7 +19,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: tasktracker
-
         default_batch_fetch_size: 50
 
 
@@ -28,7 +27,11 @@ spring:
     consumer:
       group-id: ${KAFKA_GROUP_ID}
     topic:
-      name: ${KAFKA_TOPIC_NAME}
+      name: TaskTracker
+    listener:
+      ack-mode: manual
+
+
 
   mail:
     protocol: smtp
@@ -60,7 +63,9 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
   cache:
-    cache-names: taskAfterCreate,taskById,taskAfterUpdate,taskList,taskListWithPagination,usersWithTasks
+    cache-names: taskAfterCreate,taskById,taskAfterUpdate,taskList,taskListWithPagination,usersWithTasks,notifications
+    redis:
+      time-to-live: 5m
   threads:
     virtual:
       enabled: true
