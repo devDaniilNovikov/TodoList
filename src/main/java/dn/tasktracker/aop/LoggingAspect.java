@@ -32,7 +32,7 @@ public class LoggingAspect  {
 //        log.info("Метод: {} завершил свое выполнение!", joinPoint.getSignature().getName());
 //    }
 
-    @After("@annotation(Loggable)")
+    @Around("@annotation(Loggable)")
     public Object aroundTaskServiceMethods(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         Object result = joinPoint.proceed();

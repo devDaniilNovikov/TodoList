@@ -5,12 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dn.tasktracker.configuration.TopicNames;
 import dn.tasktracker.service.RedisService;
+import dn.tasktracker.service.UserService;
 import dn.tasktracker.web.CustomHttpHeaders;
 import dn.tasktracker.web.dto.notifications.ListNotificationDto;
 import dn.tasktracker.entity.NotificationEntity;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;
-import dn.tasktracker.web.dto.notifications.NotificationDto;
+import dn.tasktracker.web.dto.notifications.NotificationRequest;
 import dn.tasktracker.web.exception.BadRequestException;
 import dn.tasktracker.web.exception.NotificationNotFoundException;
 import dn.tasktracker.web.exception.TaskNotFoundException;
@@ -57,13 +58,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final KafkaTemplate<String,Object> kafkaTemplate;
     private final NotificationMapper notificationMapper;
     private final RedisService redisService;
-
-    private static final int NOTIFICATION_CACHE_INDEX = 6;
-
-    @Value("${spring.cache.cache-names}")
-    private List<String> cacheNames;
-
-
+    private final UserService userService;
 
 
     @Override
@@ -81,14 +76,15 @@ public class NotificationServiceImpl implements NotificationService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException(
                         MessageFormat.format("User with id: {0} not found",userId)));
-        var notificationDto = createNotification(ownerId,content,user);
-        log.info("Result of sending is: {}",notificationDto);
-        var userWithHeaders = addToHeaders(ownerId);
-        log.info("User id in headers: {}",userWithHeaders.getId());
+        NotificationRequest notificationDto = createNotification(ownerId,content,user);
+        UserEntity userWithHeaders = userService.addToHeaders(ownerId);
         String jsonValue = mapToString(notificationDto.toString());
-        redisService.writeInRedis(jsonValue,notificationDto.getId());
+        String cacheString  = redisService.writeInRedis(jsonValue,notificationDto.getId()).get();
         String topic = TopicNames.TaskTracker.name();
         sendMessageToKafka(topic,jsonValue);
+        log.info("Result of sending is: {}",notificationDto);
+        log.info("User id in headers: {}",userWithHeaders.getId());
+        log.info("Cache value is: {}",cacheString);
 
 
 
@@ -107,7 +103,7 @@ public class NotificationServiceImpl implements NotificationService {
                             MessageFormat.format("User with id: {0} not found", userId)));
 
             String content = MessageFormat.format("Task {0} is expired!", task.getTitle());
-            NotificationDto dto = createNotification(userId,content, user);
+            NotificationRequest dto = createNotification(userId,content, user);
             log.info("Dto is: {}",dto);
             String jsonValue = mapToString(dto);
             redisService.writeInRedis(jsonValue,dto.getId());
@@ -120,7 +116,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void sendNotification(Long userId, File file) {
+    public void sendNotification(Long userId, File file) { //TODO: написать реализацию
 
     }
 
@@ -128,40 +124,28 @@ public class NotificationServiceImpl implements NotificationService {
     public ListNotificationDto getNotificationSet(int pageNumber,
                                                   int pageSize) {
         return notificationMapper.toDtoWithNotificationList(
-                notificationRepository.findAll(PageRequest.of(pageNumber,pageSize)).getContent()
+                notificationRepository.findAll(
+                        PageRequest.of(pageNumber,pageSize)).getContent()
         );
     }
 
     @Override
-    public void sendBatchNotifications(Long ownerId, List<Long> userIds, Set<String> messages) {
+    public void sendBatchNotifications(Long ownerId,
+                                       List<Long> userIds,
+                                       Set<String> messages) { //TODO: написать реализацию
 
     }
 
 
 
-    public UserEntity addToHeaders(Long ownerId) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        var user = userRepository.findById(ownerId)
-                .map(it -> {
-                    String headerName = CustomHttpHeaders.OWNER_ID.name();
-                    String ownerIdStr = mapToString(it.getId());
-                    httpHeaders.add(headerName, ownerIdStr);
-                    httpHeaders.set(headerName, ownerIdStr);
-                    return it;
-                }).stream()
-                .findFirst()
-                .orElseThrow(RuntimeException::new);
-        var headerValue = Collections.singletonList(mapToString(user.getId()));
-        httpHeaders.put(CustomHttpHeaders.OWNER_ID.name(), headerValue);
-        log.info("Http headers is: {}", httpHeaders);
-        return user;
-    }
+
 
     private boolean isExpired(TaskEntity task){
-        return ChronoUnit.MINUTES.between(task.getCreatedAt(),LocalDateTime.now())>1;
+        return ChronoUnit.MINUTES.between(task.getCreatedAt(), LocalDateTime.now())>1;
     }
 
-    private NotificationDto createNotification(Long ownerId,
+    @Override
+    public NotificationRequest createNotification(Long ownerId,
                                                String content,
                                                UserEntity user){
         NotificationEntity notification = new NotificationEntity();
@@ -170,8 +154,8 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setCreatedAt(LocalDateTime.now());
         user.addNotification(notification);
         notificationRepository.saveAndFlush(notification);
-        NotificationDto notificationDto = new NotificationDto();
-        var requireUser = addToHeaders(ownerId).getUsername();
+        NotificationRequest notificationDto = new NotificationRequest();
+        var requireUser = userService.addToHeaders(ownerId).getUsername();
         notificationDto.setId(notification.getId());
         notificationDto.setContent(notification.getContent());
         notificationDto.setFrom(requireUser);
@@ -181,24 +165,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     }
 
-
-
-//    private WeakReference<String> writeToRedis(int indexOfCache,String jsonValue){
-//        try {
-//            ObjectMapper objectMapper = new ObjectMapper();
-//            objectMapper.registerModule(new JavaTimeModule());
-//            objectMapper.writeValueAsString(jsonValue);
-//            String key = cacheNames.get(indexOfCache);
-//            redisTemplate.opsForValue().set(key,jsonValue);
-//            redisTemplate.expire(key,5,TimeUnit.MINUTES);
-//            var result = Objects.requireNonNull(redisTemplate.opsForValue().get(key)).toString();
-//            log.info("Successful writing in Redis: {}",result);
-//            return new WeakReference<>(result);
-//        }catch (JsonProcessingException e){
-//            log.error("Cant write in Redis");
-//            throw new RuntimeException();
-//        }
-//    }
 
     private void sendMessageToKafka(String topicName,
                                     String jsonValue){
@@ -212,13 +178,9 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
-
-
     private String mapToString(Object element){
         return String.valueOf(element);
     }
-
-
 
 
 }

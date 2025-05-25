@@ -7,6 +7,7 @@ import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.entity.UserStatus;
 import dn.tasktracker.event.*;
+import dn.tasktracker.web.CustomHttpHeaders;
 import dn.tasktracker.web.exception.UserAlreadyExistsException;
 import dn.tasktracker.web.exception.UserNotFoundException;
 import dn.tasktracker.web.mapper.UserMapper;
@@ -24,6 +25,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -158,6 +160,24 @@ public  class UserServiceImpl implements UserService {
                         MessageFormat.format("User with phoneNumber: {0} not found", phoneNumber))));
     }
 
+    @Override
+    public UserEntity addToHeaders(Long ownerId) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        var user = userRepository.findById(ownerId)
+                .map(it -> {
+                    String headerName = CustomHttpHeaders.OWNER_ID.name();
+                    String ownerIdStr = mapToString(it.getId());
+                    httpHeaders.add(headerName, ownerIdStr);
+                    httpHeaders.set(headerName, ownerIdStr);
+                    return it;
+                }).stream()
+                .findFirst()
+                .orElseThrow(RuntimeException::new);
+        var headerValue = Collections.singletonList(mapToString(user.getId()));
+        httpHeaders.put(CustomHttpHeaders.OWNER_ID.name(), headerValue);
+        log.info("Http headers is: {}", httpHeaders);
+        return user;
+    }
 
 
     @Override

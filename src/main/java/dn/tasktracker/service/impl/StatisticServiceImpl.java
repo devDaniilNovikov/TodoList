@@ -4,6 +4,7 @@ package dn.tasktracker.service.impl;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.TaskStatus;
 import dn.tasktracker.entity.UserEntity;
+import dn.tasktracker.service.RedisService;
 import dn.tasktracker.web.mapper.UserMapper;
 import dn.tasktracker.repository.UserRepository;
 import dn.tasktracker.service.StatisticService;
@@ -24,10 +25,7 @@ public class StatisticServiceImpl implements StatisticService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final UserService userService;
-
-    @Value("${spring.cache.cache-names}")
-    private List<String> cacheNames;
-
+    private final RedisService redisService;
 
     @Override
     public Map<String, List<TaskEntity>> getUserStatisticByTasks(Long userId) {
@@ -43,10 +41,13 @@ public class StatisticServiceImpl implements StatisticService {
             log.info("Пользователь с идентификатором: {} забанен", userId);
             return Collections.emptyMap();
         }
-        log.info("Пользователь с именем: {} имеет {} проваленных задач",
-                user.getUsername(), countOfFailedTasks);
+        log.info("Пользователь с именем: {} имеет {} проваленных задач", user.getUsername(), countOfFailedTasks);
+        userMap.put(user.getUsername(),user.getTasks());
+        var redisValue = redisService.writeInRedis(userMap,userId);
+        log.info("Redis value is: {}",redisValue.get());
         return userMap;
     }
+
 
 
     @Override

@@ -1,5 +1,6 @@
 package dn.tasktracker.service;
 
+import dn.tasktracker.entity.UserEntity;
 import dn.tasktracker.web.dto.user.ChangePasswordDto;
 import dn.tasktracker.web.dto.user.ListUserResponse;
 import dn.tasktracker.web.dto.user.UserCreateRequest;
@@ -27,6 +28,8 @@ public interface UserService {
     UserResponse getByUsername(String username);
 
     UserResponse getByPhoneNumber(String phoneNumber);
+
+    UserEntity addToHeaders(Long ownerId);
 
     void banAccount(Long userId);
 
