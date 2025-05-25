@@ -14,7 +14,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.IllegalTransactionStateException;
 
 import java.lang.ref.WeakReference;
 import java.text.DateFormat;
@@ -41,16 +43,8 @@ public class RedisServiceImpl implements RedisService {
             objectMapper.enable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             String key = String.valueOf(keyOfElement);
             String value = objectMapper.writeValueAsString(element);
-            List<Object> txResult = redisTemplate.execute(new RedisCallback<List<Object>>() {
-                @Override
-                public List<Object> doInRedis(@NotNull RedisConnection connection) throws DataAccessException {
-                    connection.multi();
-                    connection.setCommands().sAdd(key.getBytes(), value.getBytes());
-                    connection.expire(key.getBytes(), ttl.getSeconds());
-                    return connection.exec();
-                }
-            });
-            log.info("Transaction result is: {}",txResult);
+            List<Object> txResult = createInTransaction(key,value);
+            log.info("Transaction result is: {}",txResult.toArray());
             var result = Objects.requireNonNull(redisTemplate.opsForSet().members(key)).toString();
             log.info("Successful writing in redis, key: {}, value: {}",key,value);
             return new WeakReference<>(result);
@@ -70,4 +64,22 @@ public class RedisServiceImpl implements RedisService {
             };
         });
     } //TODO:
+
+
+    public List<Object> createInTransaction(String key,String value){
+        return redisTemplate.execute(new RedisCallback<List<Object>>() {
+            @Override
+            public List<Object> doInRedis(RedisConnection connection) throws DataAccessException {
+                try {
+                    connection.multi();
+                    connection.setCommands().sAdd(key.getBytes(), value.getBytes());
+                    redisTemplate.expire(key, ttl);
+                    return connection.exec();
+                }catch (IllegalTransactionStateException ex){
+                    log.error("Bad transaction execution: {}",ex.getLocalizedMessage());
+                    throw new RuntimeException();
+                }
+            };
+        });
+    }
 }
