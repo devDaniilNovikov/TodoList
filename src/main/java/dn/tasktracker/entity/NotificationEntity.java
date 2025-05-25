@@ -26,7 +26,7 @@ public class NotificationEntity extends BasedEntity implements Serializable {
 
     private String content;
 
-    @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss",shape = JsonFormat.Shape.STRING)
+    @JsonFormat(pattern = "dd.MM.yyyy HH:mm:ss",shape = JsonFormat.Shape.STRING)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Override

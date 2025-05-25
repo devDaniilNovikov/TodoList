@@ -45,7 +45,7 @@ public class CustomExceptionAdvice {
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorBody> handleUserNotFoundException(WebRequest request, UserNotFoundException ex){
+    public ResponseEntity<ErrorBody> handleUserNotFoundException(WebRequest request, UserNotFoundException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -55,7 +55,22 @@ public class CustomExceptionAdvice {
                         .path(request.getDescription(false))
                         .build());
     }
-//
+
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ResponseEntity<ErrorBody> handleUserNotFoundException(WebRequest request, NotificationNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ErrorBody.builder()
+                        .statusCode(HttpStatus.NOT_FOUND.value())
+                        .description(ex.getLocalizedMessage())
+                        .path(request.getDescription(false))
+                        .build());
+    }
+
+
+
+    //
 //    @ExceptionHandler(Exception.class)
 //    public ResponseEntity<ErrorBody> handleException(WebRequest request, Exception ex){
 //        return ResponseEntity

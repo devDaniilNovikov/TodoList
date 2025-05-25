@@ -1,15 +1,15 @@
 package dn.tasktracker.web.mapper;
 
 import dn.tasktracker.web.dto.notifications.ListNotificationDto;
-import dn.tasktracker.web.dto.notifications.NotificationDto;
 import dn.tasktracker.entity.NotificationEntity;
+import dn.tasktracker.web.dto.notifications.NotificationRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface NotificationMapper extends Mappable<NotificationEntity, NotificationDto> {
+public interface NotificationMapper extends Mappable<NotificationEntity, NotificationRequest> {
 
     default ListNotificationDto toDtoWithNotificationList(List<NotificationEntity> notifications){
         ListNotificationDto listNotificationDto = new ListNotificationDto();
@@ -23,5 +23,5 @@ public interface NotificationMapper extends Mappable<NotificationEntity, Notific
     @Override
     @Mapping(source = "user.id",target = "from")
     @Mapping(source = "createdAt",target = "createdAt",dateFormat = "dd/MM/yyyy HH:mm:ss")
-    NotificationDto toDto(NotificationEntity entity);
+    NotificationRequest toDto(NotificationEntity entity);
 }

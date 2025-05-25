@@ -8,6 +8,6 @@ import java.util.List;
 @Data
 public class ListNotificationDto {
 
-    private List<NotificationDto> notifications = new ArrayList<>();
+    private List<NotificationRequest> notifications = new ArrayList<>();
 
 }

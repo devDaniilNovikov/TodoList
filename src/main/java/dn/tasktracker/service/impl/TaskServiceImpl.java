@@ -240,7 +240,7 @@ public class TaskServiceImpl implements TaskService {
         return  status.equals(String.valueOf(TaskStatus.IN_PROGRESS)) ||
                 status.equals(String.valueOf(TaskStatus.COMPLETED)) ||
                 status.equals(String.valueOf(TaskStatus.EXPIRED)) ||
-                status.equals(String.valueOf(TaskStatus.NEW));
+                status.equals(String.valueOf(TaskStatus.NEW)); //TODO: сделать switch expressions
     }
 
 
