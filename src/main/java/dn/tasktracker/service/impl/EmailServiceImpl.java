@@ -1,8 +1,5 @@
 package dn.tasktracker.service.impl;
-
-
 import dn.tasktracker.service.EmailService;
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;

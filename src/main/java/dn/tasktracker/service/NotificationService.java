@@ -12,7 +12,7 @@ import java.util.Set;
 public interface NotificationService {
 
 
-    NotificationEntity findById(Long id);
+    NotificationRequest findById(Long id);
 
     NotificationRequest createNotification(Long ownerId, String content, UserEntity user);
 

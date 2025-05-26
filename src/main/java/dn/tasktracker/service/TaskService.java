@@ -17,7 +17,7 @@ public interface TaskService {
 
     TaskResponse getById(Long id);
 
-    TaskEntity save(TaskRequest taskRequest);
+    TaskResponse save(TaskRequest taskRequest);
 
     TaskResponse findByTitle(String title);
 

@@ -10,11 +10,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.lang.Nullable;
 
+import java.io.Serializable;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(name = "UserCreate",description = "ДТО для создания пользователя")
-public class UserCreateRequest {
+public class UserCreateRequest implements Serializable {
 
     @NotBlank(message = "Имя не должно быть пустым")
     @Size(min = 3, max = 15, message = "Имя должно быть не меньше 3 и не больше 15 символов")

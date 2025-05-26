@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Schema(name = "ListUserResponse",description = "Выходящее ДТО задачи")
-public class TaskResponse {
+public class TaskResponse implements Serializable {
 
     @Schema(name = "id",description = "Уникальный идентификатор задачи")
     private Long id;
@@ -29,11 +30,11 @@ public class TaskResponse {
     private String status;
 
     @Schema(name = "createdAt",description = "Дата и время создания задачи")
-    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy/MM/dd || HH:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "dd.MM.yyyy || HH:mm:ss")
     private LocalDateTime createdAt;
 
     @Schema(name = "updatedAt",description = "Дата и время обновления задачи")
-    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy/MM/dd || HH:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "dd.MM.yyyy || HH:mm:ss")
     private LocalDateTime updatedAt;
 
     @Schema(name = "workerName",description = "Имя пользователя, для которого создана задача")

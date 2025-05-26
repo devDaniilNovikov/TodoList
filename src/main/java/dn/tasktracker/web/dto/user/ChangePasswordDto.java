@@ -8,11 +8,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 @Schema(name = "ChangePassword",description = "ДТО для смены пароля")
-public class ChangePasswordDto {
+public class ChangePasswordDto implements Serializable {
 
     @NotNull
     @Schema(name = "oldPassword",description = "Старый пароль")

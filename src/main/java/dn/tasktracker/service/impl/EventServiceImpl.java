@@ -6,23 +6,16 @@ import dn.tasktracker.repository.EventRepository;
 import dn.tasktracker.service.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.intellij.lang.annotations.Flow;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.text.CollationElementIterator;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@Transactional(rollbackFor = Exception.class,readOnly = true)
+@Transactional(rollbackFor = Exception.class,readOnly = true,propagation = Propagation.REQUIRES_NEW)
 public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;

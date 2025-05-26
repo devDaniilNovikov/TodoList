@@ -6,6 +6,7 @@ import dn.tasktracker.aop.Loggable;
 import dn.tasktracker.entity.TaskEntity;
 import dn.tasktracker.entity.TaskStatus;
 import dn.tasktracker.event.*;
+import dn.tasktracker.service.RedisService;
 import dn.tasktracker.web.exception.TaskNotFoundException;
 import dn.tasktracker.web.exception.UserNotFoundException;
 import dn.tasktracker.web.mapper.TaskMapper;
@@ -50,6 +51,7 @@ public class TaskServiceImpl implements TaskService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final RedisService redisService;
     private static final String EVENT_NAME = "Creating of Task";
 
 
@@ -69,7 +71,7 @@ public class TaskServiceImpl implements TaskService {
                 .peek(tasks -> {
                     redisTemplate.opsForList().leftPush(cacheNames.get(1), tasks.toString());
                     redisTemplate.expire(cacheNames.get(1), ttl.toMinutes(), TimeUnit.MINUTES);
-                }).toList());
+                }).toList()); //TODO: Сделать кэширование через RedisService
     }
 
     @Override
@@ -79,7 +81,7 @@ public class TaskServiceImpl implements TaskService {
                 .peek(tasks -> {
                     redisTemplate.opsForList().leftPush(cacheNames.get(3), tasks.toString());
                     redisTemplate.expire(cacheNames.get(3), ttl.toMinutes(), TimeUnit.MINUTES);
-                }).toList());
+                }).toList()); //TODO: Сделать кэширование через RedisService
     }
 
 
@@ -88,19 +90,20 @@ public class TaskServiceImpl implements TaskService {
         return taskMapper.toDto(taskRepository.findById(id)
                 .stream()
                 .peek(task -> {
-                    redisTemplate.opsForValue()
-                            .set(String.valueOf(id), task.toString(), ttl);
+                    redisService.writeInRedis(task,id);
                 }).findAny()
                 .orElseThrow(() -> new TaskNotFoundException(
                         MessageFormat.format("Task with id: {0} not found", id)
                 )));
+
+        //TODO: Сделать кэширование через RedisService
     }
 
 
     @Override
     @Transactional
     @Loggable
-    public TaskEntity save(TaskRequest taskRequest) {
+    public TaskResponse save(TaskRequest taskRequest) {
         TaskEntity taskEntity = new TaskEntity();
         ThreadLocalRandom.current();
         var taskTitleNumber = String.valueOf(
@@ -123,11 +126,8 @@ public class TaskServiceImpl implements TaskService {
         var event = new CreateEvent<TaskEntity>(taskEntity.getTitle(),true);
         var finalEvent = event.makeEvent(taskEntity,EVENT_NAME,taskEntity.getTitle());;
         eventPublisher.publishEvent(finalEvent);
-        var isWriteToRedis = writeToRedis(taskEntity);
-        if(!isWriteToRedis){
-            log.info("Value not write to Redis");
-            throw new RedisException("Cant write to Redis, please try again");
-        }
+        var isWriteToRedis = redisService.writeInRedis(taskEntity,taskEntity.getId()).get();
+        log.info("Writing: {} in Redis",isWriteToRedis);
 //        var mails = userRepository.findAll()
 //                .stream()
 //                .map(UserEntity::getEmail)
@@ -135,7 +135,7 @@ public class TaskServiceImpl implements TaskService {
 //                .toList();
 //        emailService.sendEmail(mapToString(mails), user.getUsername(), event.toString());
         log.info("Event: {} is saved", finalEvent);
-        return taskEntity;
+        return taskMapper.toDto(taskEntity);
     }
 
 
@@ -166,7 +166,8 @@ public class TaskServiceImpl implements TaskService {
             var event = new UpdateEvent<TaskEntity>(task.getTitle(),true);
             var finalEvent = event.makeEvent(task,task.getTitle());
             eventPublisher.publishEvent(finalEvent);
-            writeToRedis(task);
+            var redisValue = redisService.writeInRedis(task,task.getId()).get();
+            log.info("Write: {} in Redis...",redisValue);
         } else {
             throw new RuntimeException("UNKNOWN STATUS");
         }
@@ -236,11 +237,11 @@ public class TaskServiceImpl implements TaskService {
 
     }
 
-    private boolean validStatus(String status){
-        return  status.equals(String.valueOf(TaskStatus.IN_PROGRESS)) ||
-                status.equals(String.valueOf(TaskStatus.COMPLETED)) ||
-                status.equals(String.valueOf(TaskStatus.EXPIRED)) ||
-                status.equals(String.valueOf(TaskStatus.NEW)); //TODO: сделать switch expressions
+    private boolean validStatus(String status) {
+        return switch (status) {
+            case "IN_PROGRESS", "COMPLETED", "EXPIRED", "NEW" -> true;
+            default -> false;
+        };
     }
 
 
@@ -248,24 +249,6 @@ public class TaskServiceImpl implements TaskService {
     private String mapToString(Object element){
         return String.valueOf(element);
     }
-
-
-    private boolean writeToRedis(TaskEntity taskEntity){
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.registerModule(new JavaTimeModule());
-            var key = mapToString(taskEntity.getId());
-            var value = objectMapper.writeValueAsString(taskEntity);
-            redisTemplate.opsForValue().set(key, value);
-            redisTemplate.expire(mapToString(taskEntity.getId()),ttl.toMinutes(),TimeUnit.MINUTES);
-            return true;
-        }  catch (JsonProcessingException e){
-            log.error("Error writing value in redis: {}",e.getLocalizedMessage());
-            return false;
-        }
-    }
-
-
-
+    
 }
 

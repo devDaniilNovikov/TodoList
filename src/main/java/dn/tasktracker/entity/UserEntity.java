@@ -1,14 +1,10 @@
 package dn.tasktracker.entity;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.*;
 @Entity
 @Table(schema = "tasktracker", name = "users", indexes = @Index(name = "idx_users_username", columnList = "username"))

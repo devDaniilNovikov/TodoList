@@ -23,33 +23,25 @@ import dn.tasktracker.repository.UserRepository;
 import dn.tasktracker.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.HttpHeaders;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.lang.Nullable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.Set;
 
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 @CacheConfig(cacheManager = "redisCacheManager")
+@RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
@@ -61,13 +53,14 @@ public class NotificationServiceImpl implements NotificationService {
     private final UserService userService;
 
 
+
     @Override
     @Cacheable(value = "NotificationEntity::getId",key = "#id")
-    public NotificationEntity findById(Long id) {
-        return notificationRepository.findById(id)
+    public NotificationRequest findById(Long id) {
+        return notificationMapper.toDto(notificationRepository.findById(id)
                 .orElseThrow(()->new NotificationNotFoundException(
                         MessageFormat.format("Notification with id: {0} not found",id)
-                ));
+                )));
     }
 
     @Override
@@ -121,19 +114,17 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public void sendBatchNotifications(Long ownerId, List<Long> userIds, Set<String> messages) {
+
+    }
+
+    @Override
     public ListNotificationDto getNotificationSet(int pageNumber,
                                                   int pageSize) {
         return notificationMapper.toDtoWithNotificationList(
                 notificationRepository.findAll(
                         PageRequest.of(pageNumber,pageSize)).getContent()
         );
-    }
-
-    @Override
-    public void sendBatchNotifications(Long ownerId,
-                                       List<Long> userIds,
-                                       Set<String> messages) { //TODO: написать реализацию
-
     }
 
 

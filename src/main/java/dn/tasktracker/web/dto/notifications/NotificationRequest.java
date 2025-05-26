@@ -1,8 +1,8 @@
 package dn.tasktracker.web.dto.notifications;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Null;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,11 +26,13 @@ public class NotificationRequest {
     @Nullable
     private String from;
 
-
     @Schema(name = "to",description = "Имя пользователя, которому направлено уведомление")
     private String to;
 
     @Schema(name = "createdAt",description = "Время создания уведомления")
-    @JsonFormat(pattern = "yy.dd.HH",shape = JsonFormat.Shape.STRING)
+    @JsonFormat(pattern = "Hh:mm || dd.MM.yyyy",shape = JsonFormat.Shape.STRING)
     private LocalDateTime createdAt;
+
+
+
 }

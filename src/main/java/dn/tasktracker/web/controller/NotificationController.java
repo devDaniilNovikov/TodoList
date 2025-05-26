@@ -1,9 +1,9 @@
 package dn.tasktracker.web.controller;
 
-import dn.tasktracker.web.CustomHttpHeaders;
 import dn.tasktracker.web.dto.notifications.ListNotificationDto;
 import dn.tasktracker.entity.NotificationEntity;
 import dn.tasktracker.service.NotificationService;
+import dn.tasktracker.web.dto.notifications.NotificationRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -46,7 +46,7 @@ public class NotificationController {
             @ApiResponse(responseCode = "404",description = "Уведомление не найдено"),
             @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
     })
-    public NotificationEntity getNotifyById(@PathVariable Long id){
+    public NotificationRequest getNotifyById(@PathVariable Long id){
         return notificationService.findById(id); //TODO: ДТО
     }
 

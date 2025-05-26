@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.lang.Nullable;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Schema(name = "UserResponse",description = "Список пользователей с применением пагинации")
-public class UserResponse {
+public class UserResponse implements Serializable {
 
     @Schema(name = "id",description = "Уникальный идентификатор пользователя")
     private Long id;
@@ -29,11 +30,11 @@ public class UserResponse {
     @Schema(name = "password",description = "Пароль пользователя")
     private String password;
 
-    @JsonFormat(pattern = "yyyy/MM/dd || HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
+    @JsonFormat(pattern = "dd.MM.yyyy || HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
     @Schema(name = "createdAt",description = "Дата и время создания пользователя")
     private LocalDateTime createdAt;
 
-    @JsonFormat(pattern = "yyyy/MM/dd || HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
+    @JsonFormat(pattern = "dd.MM.yyyy || HH:mm:ss", shape = JsonFormat.Shape.STRING, timezone = "Europe/Moscow")
     @Schema(name = "updatedAt",description = "Дата и время обновления пользователя")
     private LocalDateTime updatedAt;
 

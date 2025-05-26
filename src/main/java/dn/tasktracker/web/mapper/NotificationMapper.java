@@ -5,10 +5,11 @@ import dn.tasktracker.entity.NotificationEntity;
 import dn.tasktracker.web.dto.notifications.NotificationRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface NotificationMapper extends Mappable<NotificationEntity, NotificationRequest> {
 
     default ListNotificationDto toDtoWithNotificationList(List<NotificationEntity> notifications){

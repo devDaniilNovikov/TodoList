@@ -1,10 +1,13 @@
 package dn.tasktracker.service;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
+import java.util.List;
 
 public interface RedisService {
 
-    WeakReference<String> writeInRedis(Object element, Long keyOfElement);
+    SoftReference<String> writeInRedis(Object element, Long keyOfElement);
 
     void updateInBatch();
+
+    void deleteAllInBatchByKeys (List<Byte> byteList);
 }

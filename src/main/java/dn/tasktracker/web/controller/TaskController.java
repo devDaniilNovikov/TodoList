@@ -24,8 +24,6 @@ import java.util.Set;
 @Tag(name = "Task",description = "Действия с задачами")
 public class TaskController {
 
-    private final TaskService taskService;
-    private final ExportService exportService;
     private static final String GET_ALL_TASKS = "/api/v1/tasks/list";
     private static final String GET_TASK_WITH_PAGINATION = "/api/v1/tasks/sort";
     private static final String GET_TASK_BY_ID = "/api/v1/tasks/task/{id}";
@@ -37,6 +35,9 @@ public class TaskController {
     private static final String EXPORT_TO_EXCEL_FILE = "/api/v1/tasks/task/excel/download";
     private static final String UPDATE_MULTIPLE_TASKS = "/api/v/tasks/taskList/update";
     private static final String DELETE_MULTIPLE_TASKS = "/api/v1/tasks/delete";
+
+    private final TaskService taskService;
+    private final ExportService exportService;
     
 
     @GetMapping(value = GET_ALL_TASKS)
@@ -97,7 +98,7 @@ public class TaskController {
             @ApiResponse(responseCode = "400",description = "Задача не создана, некорректные данные"),
             @ApiResponse(responseCode = "500",description = "Неизвестная ошибка сервера")
     })
-    public TaskEntity createTask(@RequestBody TaskRequest taskRequest){
+    public TaskResponse createTask(@RequestBody TaskRequest taskRequest){
         return taskService.save(taskRequest);
     }
 

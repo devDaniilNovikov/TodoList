@@ -59,7 +59,7 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
     }
 
 
-//    @Scheduled(cron = "* * 18 * * ?")
+    @Scheduled(cron = "0 0 18 * * ?")
     public void cleanCache() {
         redisTemplate.delete(redisTemplate.keys("*"));
         log.info("Кэш очищен");

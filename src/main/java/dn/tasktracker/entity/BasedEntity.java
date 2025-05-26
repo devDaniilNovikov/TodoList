@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import software.amazon.awssdk.services.s3.model.JSONType;
+
 
 import java.time.LocalDateTime;
 

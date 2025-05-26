@@ -15,20 +15,14 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.text.DateFormat;
 import java.time.Duration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
+import java.util.*;
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -41,7 +35,7 @@ public class RedisServiceImpl implements RedisService {
 
     @Override
     @Loggable
-    public WeakReference<String> writeInRedis(Object element,Long keyOfElement) {
+    public SoftReference<String> writeInRedis(Object element, Long keyOfElement) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule());
@@ -54,7 +48,7 @@ public class RedisServiceImpl implements RedisService {
             var result = Objects.requireNonNull(members).toString();
             log.info("Successful writing in redis, key: {}, value: {}",key,value);
             log.info("Transaction result is: {}",txResult.toString());
-            return new WeakReference<>(result);
+            return new SoftReference<>(result);
         }catch (JsonProcessingException e){
             log.error("Can't write in redis: {}",e.getLocalizedMessage());
             throw new RuntimeException();
@@ -62,6 +56,8 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
+    @Transactional
+    @Loggable
     public void updateInBatch() {
         redisTemplate.execute(new RedisCallback<Object>() {
             @Override
@@ -72,20 +68,52 @@ public class RedisServiceImpl implements RedisService {
         }); //TODO: написать реализацию
     }
 
+    @Override
+    @Transactional
+    @Loggable
+    public void deleteAllInBatchByKeys(List<Byte> keyList) {
+        if (keyList.isEmpty()){
+            throw new IllegalArgumentException("KeyList can't be empty!");
+        }
+        redisTemplate.execute(new RedisCallback<Object>() {
+            @Override
+            public Object doInRedis(@NotNull RedisConnection connection) throws DataAccessException {
+                try {
+                    connection.openPipeline();
+                    byte[] keyByteArray = new byte[keyList.size()];
+                    for (int i = 0; i < keyList.size(); i++) {
+                        keyByteArray[i] = keyList.get(i);
+                    }
+                    connection.keyCommands().del(keyByteArray);
+                    log.info("Keys deleted in batch: {}", Arrays.toString(keyByteArray));
+                    return connection.closePipeline();
+                }catch (DataAccessException | IllegalArgumentException e){
+                    log.error("Can't make batch operation. Exception: {}",e.getLocalizedMessage());
+                    throw new RuntimeException();
+                }
+            }
+        });
+    }
+
 
     public List<Object> createInTransaction(String key,String value){
         return redisTemplate.execute(new RedisCallback<List<Object>>() {
             @Override
-            public List<Object> doInRedis(RedisConnection connection){
+            public List<Object> doInRedis(@NotNull RedisConnection connection){
                 try {
+                    byte[] keyByteArray = key.getBytes();
+                    byte[] valueByteArray = value.getBytes();
                     connection.multi();
-                    connection.setCommands().sAdd(key.getBytes(), value.getBytes());
-                    connection.expire(key.getBytes(), ttl.getSeconds());
+                    connection.setCommands().sAdd(keyByteArray, valueByteArray);
+                    connection.expire(keyByteArray, ttl.getSeconds());
                     log.info("Key in transaction: {}, Value: {}, Ttl: {}",key,value,ttl.getSeconds());
                     return connection.exec();
                 }catch (IllegalTransactionStateException | DataAccessException ex){
                     log.error("Bad transaction execution: {}",ex.getLocalizedMessage());
                     throw new RuntimeException();
+                }
+                finally {
+                    connection.closePipeline();
                 }
             };
         });

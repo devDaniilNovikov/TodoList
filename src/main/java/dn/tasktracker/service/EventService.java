@@ -2,7 +2,6 @@ package dn.tasktracker.service;
 
 import dn.tasktracker.entity.Event;
 import dn.tasktracker.event.AbstractEvent;
-import dn.tasktracker.event.DeletedEvent;
 
 import java.util.List;
 import java.util.Map;
