@@ -8,7 +8,6 @@ import dn.tasktracker.service.TaskScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.data.redis.core.RedisCallback;
@@ -35,13 +34,12 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
     private static final Duration cacheTtl = Duration.ofMinutes(10);
 
 
-    //    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRate = 10000L)
     @Override
     @Transactional
     public void checkTaskStatus() {
         List<TaskEntity> tasksForDelete = taskRepository.findAll()
                 .stream()
-                .filter(task -> task.getStatus().equals(String.valueOf(TaskStatus.EXPIRED).trim()))
                 .filter(TaskEntity::isExpired)
                 .toList();
         List<Long> taskIds = tasksForDelete.stream()
@@ -54,7 +52,7 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
         redisTemplate.delete(String.valueOf(taskIds));
         log.info("List of tasks for delete: {}", Arrays.toString(tasksForDelete.toArray()));
         taskRepository.deleteAllInBatch(tasksForDelete);
-        log.info("Tasks for delete: {}", taskIds.toArray());
+        log.info("Tasks for delete: {}", tasksForDelete.toString());
 
     }
 
@@ -66,10 +64,23 @@ public class TaskScheduleServiceImpl implements TaskScheduleService {
 
     }
 
+    @Transactional
+    @Scheduled(fixedRate = 10000L)
+    @Override
+    public void changeTaskStatus() {
+        List<TaskEntity> tasksForDelete = taskRepository.findAll()
+                .stream()
+                .filter(TaskEntity::isExpired)
+                .peek(task -> task.setStatus(TaskStatus.EXPIRED.name()))
+                .toList();
+        taskRepository.saveAll(tasksForDelete);
+    }
 
-//    @Scheduled(fixedDelay = 5000)
+
+
     @Override
     @Transactional
+    @Scheduled(fixedRate = 1000L)
     public void checkTaskTime() {
         var taskExpiredList = taskRepository.findAll()
                 .stream()
