@@ -1,0 +1,101 @@
+server:
+  port: 3000
+  http2:
+    enabled: true
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+  compression:
+    enabled: true
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: tasktracker
+        default_batch_fetch_size: 50
+
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: ${KAFKA_GROUP_ID}
+    topic:
+      name: TaskTracker
+    listener:
+      ack-mode: manual
+
+
+
+  mail:
+    protocol: smtp
+    port: 587
+    host: ${MAIL_HOST}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    default-encoding: UTF-8
+  properties:
+      mail:
+        auth: true
+        starttls:
+            enable: true
+        debug: true
+
+
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
+  config:
+    import: optional:file:.env[.properties]
+  main:
+    allow-bean-definition-overriding: true
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+  cache:
+    cache-names: taskAfterCreate,taskById,taskAfterUpdate,taskList,taskListWithPagination,usersWithTasks,notifications
+    redis:
+      time-to-live: 5m
+  threads:
+    virtual:
+      enabled: true
+  batch:
+    job:
+      enabled: true
+
+
+
+app:
+  cache:
+    cacheType: redis
+    caches:
+      taskAfterCreate:
+        ttl: 5m
+      taskAfterUpdate:
+        ttl: 10m
+      taskList:
+        ttl: 10m
+      taskById:
+        ttl: 10m
+logging:
+  level:
+    org.springframework.web: ERROR
+    org.springframework.scheduling: INFO
+    org.hibernate.SQL: INFO
+  file:
+    name: logs/application.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

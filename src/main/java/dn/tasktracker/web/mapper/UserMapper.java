@@ -1,0 +1,33 @@
+package dn.tasktracker.web.mapper;
+
+import dn.tasktracker.web.dto.user.ListUserResponse;
+import dn.tasktracker.web.dto.user.UserResponse;
+import dn.tasktracker.entity.UserEntity;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring",unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface UserMapper {
+
+
+    UserEntity toEntity(UserResponse userResponse);
+
+    UserResponse toDto(UserEntity userEntity);
+
+    List<UserResponse> toDtoList(List<UserEntity> userEntityList);
+
+    List<UserEntity> toEntityList(List<UserResponse> userResponseList);
+
+    default ListUserResponse toList(List<UserEntity>users){
+        ListUserResponse listUserResponse = new ListUserResponse();
+        listUserResponse.setUsers(users.stream()
+                .map(this::toDto)
+                .toList());
+        return listUserResponse;
+    }
+
+
+
+}

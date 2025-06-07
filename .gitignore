@@ -35,3 +35,19 @@ out/
 
 ### VS Code ###
 .vscode/
+!/.idea/
+
+!/gradle/
+!/build.gradle.kts
+
+!/gradlew
+
+!/gradlew.bat
+
+!/HELP.md
+
+!/settings.gradle.kts
+
+!/TaskTracker.iml
+!/.gitattributes
+!/build.gradle.kts

@@ -1,0 +1,118 @@
+package dn.tasktracker.service.impl;
+
+import dn.tasktracker.entity.TaskEntity;
+import dn.tasktracker.entity.TaskStatus;
+import dn.tasktracker.entity.UserEntity;
+import dn.tasktracker.repository.TaskRepository;
+import dn.tasktracker.service.TaskScheduleService;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.retry.stats.StatisticsRepository;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class TaskScheduleServiceImpl implements TaskScheduleService {
+
+    private final TaskRepository taskRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final Duration cacheTtl = Duration.ofMinutes(10);
+
+
+    @Scheduled(fixedRate = 10000L)
+    @Override
+    @Transactional
+    public void checkTaskStatus() {
+        List<TaskEntity> tasksForDelete = taskRepository.findAll()
+                .stream()
+                .filter(TaskEntity::isExpired)
+                .toList();
+        List<Long> taskIds = tasksForDelete.stream()
+                .map(TaskEntity::getId)
+                .collect(Collectors.groupingBy(id -> id, Collectors.counting()))
+                .keySet()
+                .stream()
+                .toList();
+        log.info("Ids of tasks for delete : {} ", Arrays.toString(taskIds.toArray()));
+        redisTemplate.delete(String.valueOf(taskIds));
+        log.info("List of tasks for delete: {}", Arrays.toString(tasksForDelete.toArray()));
+        taskRepository.deleteAllInBatch(tasksForDelete);
+        log.info("Tasks for delete: {}", tasksForDelete.toString());
+
+    }
+
+
+    @Scheduled(cron = "0 0 18 * * ?")
+    public void cleanCache() {
+        redisTemplate.delete(redisTemplate.keys("*"));
+        log.info("Кэш очищен");
+
+    }
+
+    @Transactional
+    @Scheduled(fixedRate = 10000L)
+    @Override
+    public void changeTaskStatus() {
+        List<TaskEntity> tasksForDelete = taskRepository.findAll()
+                .stream()
+                .filter(TaskEntity::isExpired)
+                .peek(task -> task.setStatus(TaskStatus.EXPIRED.name()))
+                .toList();
+        taskRepository.saveAll(tasksForDelete);
+    }
+
+
+
+    @Override
+    @Transactional
+    @Scheduled(fixedRate = 1000L)
+    public void checkTaskTime() {
+        var taskExpiredList = taskRepository.findAll()
+                .stream()
+                .filter(TaskEntity::isExpired)
+                .peek(task -> {
+                    task.setCompletedAt(false);
+                    task.setStatus(String.valueOf(TaskStatus.EXPIRED));
+                    var key = String.valueOf(task.getId());
+                    var value = String.valueOf(task);
+                    redisTemplate.opsForValue().set(key, value, cacheTtl);
+                    log.info("Task {} is written to redis", task);
+                })
+                .map(taskRepository::save)
+                .map(TaskEntity::getId)
+                .toList();
+        var requiredTasks = taskRepository.findAllById(taskExpiredList);
+        Map<String, List<TaskEntity>> taskMap = taskRepository.findAll()
+                .stream()
+                .filter(task -> TaskStatus.EXPIRED.name().equals(task.getStatus()))
+                .collect(Collectors.groupingBy(task -> String.valueOf(task.getUser().getId())));
+        log.info("Task Map: {}", taskMap);
+        taskMap.keySet()
+                .stream()
+                .filter(Objects::nonNull)
+                .forEach(task->{
+                    taskRepository.deleteAllInBatch(requiredTasks);
+                    redisTemplate.delete(List.of(requiredTasks).toString());
+                });
+
+        log.info("Map for delete: {}", taskMap);
+    }
+
+
+}
+
